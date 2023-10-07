@@ -13,7 +13,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       idTypesRoom: {
-        allowNull: false,
+        allowNull: true,
         type: Sequelize.STRING
       },
       nameProduct: {

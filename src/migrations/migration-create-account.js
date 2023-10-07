@@ -1,11 +1,19 @@
 'use strict';
+
+const account = require('../models/account');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('Accounts', { 
-      idAcc: {
+      idAcc:{
         allowNull: false,
         primaryKey: true,
+        unique: true,
+        type: Sequelize.STRING
+      },
+      idUser: {
+        allowNull: false,
         type: Sequelize.STRING
       },
       sdt: {
