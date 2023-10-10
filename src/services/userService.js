@@ -1,7 +1,7 @@
 import { QueryTypes } from 'sequelize';
 import db, { sequelize } from '../models/index';
 import bcrypt from 'bcryptjs';
-import { Types } from 'mysql2';
+import JWT from 'jsonwebtoken';
 
 const salt = bcrypt.genSaltSync(10);
 const pubMethod = require('../public/public_method');
@@ -172,7 +172,6 @@ let getInforUser = (idUser) => {
                 console.log(user.length);
                 resolve(user[0]);
             } else {
-                console.log('ko co');
                 resolve();
             }
         } catch (error) {
