@@ -6,6 +6,7 @@ module.exports = {
       idRoom: {
         allowNull: false,
         primaryKey: true,
+        unique: true,
         type: Sequelize.STRING
       },
       nameRoom: {

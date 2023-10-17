@@ -12,10 +12,6 @@ module.exports = {
         unique: true,
         type: Sequelize.STRING
       },
-      idUser: {
-        allowNull: false,
-        type: Sequelize.STRING
-      },
       sdt: {
         allowNull: false,
         type: Sequelize.STRING
@@ -26,6 +22,7 @@ module.exports = {
       },
       isAdmin: {
         allowNull: false,
+        defaultValue: false,
         type: Sequelize.BOOLEAN
       },
       createdAt: {

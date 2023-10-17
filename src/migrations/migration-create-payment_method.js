@@ -6,6 +6,7 @@ module.exports = {
       idPayment: {
         allowNull: false,
         primaryKey: true,
+        unique: true,
         type: Sequelize.STRING
       },
       namePayment: {

@@ -6,6 +6,7 @@ module.exports = {
       idOrder: {
         allowNull: false,
         primaryKey: true,
+        unique: true,
         type: Sequelize.STRING
       },
       idDelivery: {

@@ -6,6 +6,7 @@ module.exports = {
       idCat: {
         allowNull: false,
         primaryKey: true,
+        unique: true,
         type: Sequelize.STRING
       },
       nameCat: {

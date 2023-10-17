@@ -6,6 +6,7 @@ module.exports = {
       idRat: {
         allowNull: false,
         primaryKey: true,
+        unique: true,
         type: Sequelize.STRING
       },
       idUser: {

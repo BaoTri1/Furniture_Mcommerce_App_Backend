@@ -9,6 +9,10 @@ module.exports = {
         unique: true,
         type: Sequelize.STRING
       },
+      idAcc: {
+        allowNull: false,
+        type: Sequelize.STRING
+      },
       fullName: {
         allowNull: false,
         type: Sequelize.STRING

@@ -6,6 +6,7 @@ module.exports = {
       idDiscount: {
         allowNull: false,
         primaryKey: true,
+        unique: true,
         type: Sequelize.STRING
       },
       idProduct: {

@@ -20,14 +20,14 @@ let handleUserLogin = (sdt, passwd) => {
                 if (account.length !== 0) {
                     let check = await bcrypt.compareSync(passwd, account[0].password);
                     if (check) {
+                        let user = await getInforUser(account[0].idAcc);
+                        const token = JWT.sign({idAcc: account[0].idAcc, isAdmin: account[0].isAdmin}, process.env.JWT_SECRET, {expiresIn: '1d'});
                         userData.errCode = 0
-                        userData.errMessage = 'Ok'
-                        try {
-                            let user = await getInforUser(account[0].idUser);
-                            userData.userInfor = user
-                        } catch (error) {
-                            console.log(error);
-                        }
+                        userData.errMessage = 'Đăng nhập thành công.'
+                        userData.isAdmin = account[0].isAdmin
+                        userData.userInfor = user
+                        userData.access_token = `Bearer ${token}`;
+                        
                     } else {
                         userData.errCode = 3
                         userData.errMessage = 'Sai mật khẩu.'
@@ -85,10 +85,10 @@ let handleUserSignup = async (data) => {
                 userData.errMessage = 'Số điện thoại đã tồn tại.'
                 resolve(userData);
             } else {
-                const lastaccount = await sequelize.query("SELECT * FROM accounts ORDER BY idAcc DESC LIMIT 1;", {
+                const lastaccount = await sequelize.query("SELECT * FROM accounts ORDER BY createdAt DESC LIMIT 1;", {
                     type: QueryTypes.SELECT
                 });
-                const lastuser = await sequelize.query("SELECT * FROM users ORDER BY idUser DESC LIMIT 1;", {
+                const lastuser = await sequelize.query("SELECT * FROM users ORDER BY createdAt DESC LIMIT 1;", {
                     type: QueryTypes.SELECT
                 });
 
@@ -101,21 +101,22 @@ let handleUserSignup = async (data) => {
                     console.log(idUser);
                 }
 
-                if (lastaccount === 0) {
+                if (lastaccount.length === 0) {
                     idAcc = 'ACC1';
                     console.log(idAcc);
                 } else {
                     //Tao idAcc mới bằng cách lấy số cuối của idAcc cuối bảng cộng thêm 1 rồi thêm vào chuỗi 'ACC'
-                    idAcc = 'ACC' + (pubMethod.parseIdtoInt(lastuser[0].idUser) + 1);
+                    idAcc = 'ACC' + (pubMethod.parseIdtoInt(lastaccount[0].idAcc) + 1);
                     console.log(idAcc);
                 }
 
                 //Insert users vào database
                 try {
-                    const query = `INSERT INTO users (idUser, fullName, createdAt, updatedAt) VALUES
-                                    (:idUser, :fullName, :createdAt, :updatedAt)`;
+                    const query = `INSERT INTO users (idUser, idAcc, fullName, createdAt, updatedAt) VALUES
+                                    (:idUser, :idAcc, :fullName, :createdAt, :updatedAt)`;
                     const values = {
                         idUser: idUser,
+                        idAcc: idAcc,
                         fullName: data.fullName,
                         createdAt: new Date(),
                         updatedAt: new Date(),
@@ -125,21 +126,24 @@ let handleUserSignup = async (data) => {
                         replacements: values,
                         type: sequelize.QueryTypes.INSERT,
                     });
-                    console.log('Inserted record:', result);
+                    console.log('Inserted record:', result[0]);
+                    if(result[1] === 0){
+                        userData.errCode = 5;
+                        userData.errMessage = 'Thêm người dùng thất bại.'
+                        resolve(userData);
+                    }
                 } catch (error) {
                     console.log(error);
                 }
 
                 //Insert accounts vào database
                 try {
-                    const query = `INSERT INTO accounts (idAcc, idUser, sdt, password, isAdmin, createdAt, updatedAt) VALUES
-                                     (:idAcc, :idUser, :sdt, :password, :isAdmin, :createdAt, :updatedAt)`;
+                    const query = `INSERT INTO accounts (idAcc, sdt, password, createdAt, updatedAt) VALUES
+                                     (:idAcc, :sdt, :password, :createdAt, :updatedAt)`;
                     const values = {
                         idAcc: idAcc,
-                        idUser: idUser,
                         sdt: data.sdt,
                         password: hashPassword,
-                        isAdmin: false,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     };
@@ -148,31 +152,60 @@ let handleUserSignup = async (data) => {
                         replacements: values,
                         type: sequelize.QueryTypes.INSERT,
                     });
-                    console.log('Inserted record:', result);
+                    console.log('Inserted record:', result[0]);
+                    if(result[1] === 0){
+                        userData.errCode = 5;
+                        userData.errMessage = 'Thêm tài khoản thất bại.'
+                        resolve(userData);
+                    }
                 } catch (error) {
                     console.log(error);
                 }
 
+                try {
+                    const query ="SELECT idAcc, isAdmin FROM accounts WHERE idAcc = :idAcc";
+                    const result =await sequelize.query(query, {
+                        replacements: {idAcc: idAcc},
+                        type: sequelize.QueryTypes.SELECT,
+                    });
+                    console.log(result);
+                    if(result.length === 0){
+                        userData.errCode = 6;
+                        userData.errMessage = 'Đăng ký thất bại.'
+                        resolve(userData);
+                    }else {
+                        let user = await getInforUser(result[0].idAcc);
+                        const token = JWT.sign({idAcc: result[0].idAcc, isAdmin: result[0].isAdmin}, process.env.JWT_SECRET, {expiresIn: '1d'});
+                        userData.errCode = 0;
+                        userData.errMessage = 'Đăng ký thành công.';
+                        userData.userInfor = user
+                        userData.access_token = `Bearer ${token}`;
+                    }
+                } catch (error) { 
+                    console.log(error);
+                }
+
             }
-            resolve();
+            resolve(userData);
         } catch (error) {
             reject(error);
         }
     });
 }
 
-let getInforUser = (idUser) => {
+let getInforUser = (idAcc) => {
     return new Promise(async (resolve, reject) => {
         try {
             let user = await sequelize.query
-            ("SELECT idUser, fullName, sdtUser, email, gender, dateOfBirth, avatar FROM users WHERE idUser = '" + idUser + "';"
+            ("SELECT idUser, idAcc, fullName, sdtUser, email, gender, dateOfBirth, avatar FROM users WHERE idAcc = '" + idAcc + "';"
                 , { type: QueryTypes.SELECT });
             if (user.length !== 0) {
                 console.log(user[0]);
                 console.log(user.length);
                 resolve(user[0]);
             } else {
-                resolve();
+                console.log('khong co', user[0]);
+                resolve(user[0]);
             }
         } catch (error) {
             reject(error);
@@ -194,4 +227,5 @@ let hashUserPassword = (passwd) => {
 module.exports = {
     handleUserLogin: handleUserLogin,
     handleUserSignup: handleUserSignup,
+    getInforUser: getInforUser,
 }

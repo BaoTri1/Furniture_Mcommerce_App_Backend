@@ -7,4 +7,4 @@ class PublicMethod {
 
 }
 
-module.exports = new PublicMethod;
+export default new PublicMethod;
