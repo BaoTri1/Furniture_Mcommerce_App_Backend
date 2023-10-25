@@ -2,15 +2,23 @@ import { QueryTypes } from 'sequelize';
 import { sequelize } from '../models/index';
 import public_method from '../public/public_method';
 
-let getParentCategory = () => {
+let getParentCategoryByPage = (page, limit) => {
     return new Promise(async (resolve, reject) => {
         try {
             let data = {};
-            let parCat = await sequelize.query('SELECT idcatParent, name FROM parentcategorys', { type: QueryTypes.SELECT });
+            let total_row;
+            let start = (page - 1) * limit;
+            let total_page;
+            let parCat = await sequelize.query(`SELECT idcatParent, name FROM parentcategorys LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
             if (parCat.length !== 0) {
+                total_page = Math.ceil(parCat.length / limit);
                 console.log(parCat)
                 data.errCode = 0
-                data.errMessage = 'OK'
+                data.errMessage = 'Lấy dữ liệu nhóm danh mục thành công.'
+                data.total_row = parCat.length
+                data.limit = limit
+                data.page = page
+                data.total_page = total_page
                 data.data = parCat
             } else {
                 data.errCode = 1
@@ -187,7 +195,7 @@ let createCategory = (data) => {
                     idCat = 'C1';
                     console.log(idCat);
                 } else {
-                    //Tao idUser mới bằng cách lấy số cuối của idUser cuối bảng cộng thêm 1 rồi thêm vào chuỗi 'USER'
+                    //Tao idCategory mới bằng cách lấy số cuối của idUser cuối bảng cộng thêm 1 rồi thêm vào chuỗi 'USER'
                     idCat = 'C' + (public_method.parseIdtoInt(lastcategory[0].idCat) + 1);
                     console.log(idCat);
                 }
@@ -271,26 +279,67 @@ let getOneCategory = (idCat) => {
     })
 }
 
-let getallCategory = () => {
+let getCategoryByPage = (page, limit, searchtext) => {
     return new Promise(async (resolve, reject) => {
-        let dataCategory = {};
+        let data = {};
+        let total_row;
+        let start = (page - 1) * limit;
+        let total_page;
+
         try {
             const query = `SELECT idCat, nameCat, parentcategorys.name, parentcategorys.idcatParent
             FROM categorys
-            INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent
-            ORDER BY categorys.createdAt ASC;`
-            const categorys = await sequelize.query(query, { type: QueryTypes.SELECT });
+                 INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent 
+                 WHERE categorys.nameCat LIKE '%${searchtext}%' || categorys.idCat LIKE '%${searchtext}%'
+                  || parentcategorys.name LIKE '%${searchtext}%'
+                    ORDER BY categorys.createdAt `
+            const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
+            if (rowData.length !== 0) {
+                total_row = rowData.length;
+            }
+            total_page = Math.ceil(total_row / limit);
+            const categorys = await sequelize.query(`${query} ASC LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
             if (categorys.length !== 0) {
                 console.log(categorys);
                 console.log(categorys.length);
-                dataCategory.errCode = 0
-                dataCategory.errMessage = 'Đã lấy danh sách danh mục sản phẩm thành công'
-                dataCategory.data = categorys
+                data.errCode = 0
+                data.errMessage = 'Đã lấy danh sách danh mục sản phẩm thành công'
+                data.total_row = total_row
+                data.limit = limit
+                data.page = page
+                data.total_page = total_page
+                data.data = categorys
             } else {
-                dataCategory.errCode = 1,
-                    dataCategory.errMessage = 'Lấy danh sách danh mục sản phẩm thất bại'
+                data.errCode = 1,
+                data.errMessage = 'Không tìm thấy danh mục sản'
             }
-            resolve(dataCategory);
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+let getlistCategory = () => {
+    return new Promise(async (resolve, reject) => {
+        let data = {};
+        try {
+            const query = `SELECT idCat, nameCat, parentcategorys.name, parentcategorys.idcatParent
+            FROM categorys
+                 INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent 
+                    ORDER BY categorys.createdAt`
+            const categorys = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if (categorys.length !== 0) {
+                console.log(categorys);
+                console.log(categorys.length);
+                data.errCode = 0
+                data.errMessage = 'Đã lấy danh sách danh mục sản phẩm thành công'
+                data.data = categorys
+            } else {
+                data.errCode = 1,
+                data.errMessage = 'Không tìm thấy danh mục sản'
+            }
+            resolve(data);
         } catch (error) {
             reject(error);
         }
@@ -354,7 +403,35 @@ let deleteCategory = (idCat) => {
     })
 }
 
-let getallTypeRoom = () => {
+let getKindOfRoomByPage = (page, limit) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            let start = (page - 1) * limit;
+            let total_page;
+            let typerooms = await sequelize.query(`SELECT idRoom, nameRoom FROM kindofrooms LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
+            if (typerooms.length !== 0) {
+                console.log(typerooms)
+                total_page = Math.ceil(typerooms.length / limit);
+                data.errCode = 0
+                data.errMessage = 'Lấy danh sách loại phòng thành công.'
+                data.total_row = typerooms.length
+                data.limit = limit
+                data.page = page
+                data.total_page = total_page
+                data.data = typerooms
+            } else {
+                data.errCode = 1
+                data.errMessage = 'Không tìm thấy dữ liệu'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+let getListKindOfRoom = () => {
     return new Promise(async (resolve, reject) => {
         try {
             let data = {};
@@ -529,20 +606,22 @@ let deleteTypeRoom = (idTypeRoom) => {
 }
 
 module.exports = {
-    getParentCategory: getParentCategory,
+    getParentCategoryByPage: getParentCategoryByPage,
     getOneParentCategory: getOneParentCategory,
     createParentCategory: createParentCategory,
     updateParentCategory: updateParentCategory,
     deleteParentCategory: deleteParentCategory,
 
     getOneCategory: getOneCategory,
-    getallCategory: getallCategory,
+    getlistCategory: getlistCategory,
+    getCategoryByPage: getCategoryByPage,
     createCategory: createCategory,
     updateCategory: updateCategory,
     deleteCategory: deleteCategory,
 
     getOneTypeRoom: getOneTypeRoom,
-    getallTypeRoom: getallTypeRoom,
+    getListKindOfRoom: getListKindOfRoom,
+    getKindOfRoomByPage: getKindOfRoomByPage,
     createTypeRoom: createTypeRoom,
     updateTypeRoom: updateTypeRoom,
     deleteTypeRoom: deleteTypeRoom,
@@ -550,6 +629,6 @@ module.exports = {
 
 // SELECT idCat, nameCat, parentcategorys.name, parentcategorys.idcatParent
 //     FROM categorys
-//          INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent 
+//          INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent
 //          WHERE categorys.nameCat LIKE '%C3%' || categorys.idCat LIKE '%C3%' || parentcategorys.name LIKE '%C3%'
 //             ORDER BY categorys.createdAt ASC LIMIT 0, 10;

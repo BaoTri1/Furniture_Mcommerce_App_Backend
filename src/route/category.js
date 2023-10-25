@@ -6,14 +6,16 @@ import isAdmin from '../middlewares/verify_role';
 const router = express.Router();
 
 
-router.get('/parentCategory/all', categoryController.getParentCategory);
-router.get('/parentCategory/:id', categoryController.getOneParentCategory)
+router.get('/parentCategory/', categoryController.getParentCategoryByPage);
+router.get('/parentCategory/:id', categoryController.getOneParentCategory);
 
-router.get('/all', categoryController.getallCategory);
-router.get('/one/:id', categoryController.getOneCategory);
-
-router.get('/KindOfRoom/all', categoryController.getallKindOfRoom);
+router.get('/KindOfRoom/all', categoryController.getListKindOfRoom);
+router.get('/KindOfRoom/', categoryController.getKindOfRoomByPage);
 router.get('/KindOfRoom/:id', categoryController.getOneKindOfRoom);
+
+router.get('/all', categoryController.getlistCategory);
+router.get('/', categoryController.getCategoryByPage);
+router.get('/:id', categoryController.getOneCategory);
 
 router.use(verifyToken);
 router.use(isAdmin);

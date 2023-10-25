@@ -2,9 +2,11 @@ import categoryService from '../services/categoryService';
 
 class CategoryController {
 
-    //GET api/categories/parentCategory/all
-    async getParentCategory(req, res, next) {
-        let results = await categoryService.getParentCategory();
+    //GET api/categories/parentCategory/?page=''&limit=''
+    async getParentCategoryByPage(req, res, next) {
+        let page = req.query.page || 1;
+        let limit = req.query.limit || 6;
+        let results = await categoryService.getParentCategoryByPage(page, limit);
         return res.status(200).json({
             results
         })
@@ -131,9 +133,29 @@ class CategoryController {
         })
     }
 
+    // //GET api/categories/all
+    // async getallCategory(req, res, next) {
+    //     let results = await categoryService.getallCategory();
+    //     return res.status(200).json({
+    //         results
+    //     })
+    // }
+
+    //GET api/categories/?page=''&limit=''&search=''
+    async getCategoryByPage(req, res, next) {
+        let page = req.query.page || 1;
+        let limit = req.query.limit || 6;
+        let searchtext = req.query.search || '';
+
+        let results = await categoryService.getCategoryByPage(page, limit, searchtext);
+        return res.status(200).json({
+            results
+        })
+    }
+
     //GET api/categories/all
-    async getallCategory(req, res, next) {
-        let results = await categoryService.getallCategory();
+    async getlistCategory(req, res, next) {
+        let results = await categoryService.getlistCategory();
         return res.status(200).json({
             results
         })
@@ -148,10 +170,19 @@ class CategoryController {
         })
     }
 
+    //GET api/categories/KindOfRoom/?page=''&limit=''
+    async getKindOfRoomByPage(req, res, next) {
+        let page = req.query.page || 1;
+        let limit = req.query.limit || 6;
+        let results = await categoryService.getKindOfRoomByPage(page, limit);
+        return res.status(200).json({
+            results
+        })
+    }
+
     //GET api/categories/KindOfRoom/all
-    async getallKindOfRoom(req, res, next) {
-        console.log('o day');
-        let results = await categoryService.getallTypeRoom();
+    async getListKindOfRoom(req, res, next) {
+        let results = await categoryService.getListKindOfRoom();
         return res.status(200).json({
             results
         })
