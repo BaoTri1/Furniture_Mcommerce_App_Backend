@@ -12,6 +12,14 @@ class CategoryController {
         })
     }
 
+    //GET api/categories/parentCategory/all
+    async getlistParentCategory(req, res, next) {
+        let results = await categoryService.getlistParentCategory();
+        return res.status(200).json({
+            results
+        })
+    }
+
     //GET api/categories/parentCategory/:id
     async getOneParentCategory(req, res, next) {
         let idCatParent = req.params.id;

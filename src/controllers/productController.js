@@ -35,16 +35,29 @@ class ProductController {
 
     }
 
-    //GET api/products/?page=''&limit=''
+    //GET api/products/?page=''&limit=''&category=''&price=''&typroom=''&search=''
     async getProductByPage(req, res, next) {
         let page = req.query.page || 1;
         let limit = req.query.limit || 20;
+        let category = req.query.category || '';
+        let price = req.query.price || '';
+        let typeroom = req.query.typeroom || '';
+        let search = req.query.search || '';
 
-        let results = await productService.getProductByPage(page, limit, '')
+        let results = await productService.getProductByPage(page, limit, category, price, typeroom, search)
 
         return res.status(200).json({
-            results
-            
+           results,    
+        })
+    }
+
+    //GET api/products/all
+    async getListProduct(req, res, next) {
+
+        let results = await productService.getListProduct();
+
+        return res.status(200).json({
+           results,    
         })
     }
 

@@ -128,22 +128,37 @@ let updateProduct = (idProduct, data) => {
     });
 }
 
-let getProductByPage = (page, limit, searchtext) => {
+let getProductByPage = (page, limit, category, price, typeroom, search) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
         let total_row;
         let start = (page - 1) * limit;
         let total_page;
 
+        const queryTypeRoom = !typeroom ? `OR kindofrooms.nameRoom IS NULL` : `AND kindofrooms.nameRoom IS NOT NULL`
+        const [price_start, price_end] = price.split('-');
+
         try {
-            const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom,
-            nameProduct, price, quantity, material, size, description
-                FROM products
-                     INNER JOIN images ON products.idProduct = images.idProduct
-                     INNER JOIN categorys ON products.idCategory = categorys.idCat
-                     LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
-                        WHERE (images.typeImg = 'Avatar' AND products.idTypesRoom IS NULL) OR
-    						  (images.typeImg = 'Avatar' AND kindofrooms.idRoom IS NOT NULL)
+            // const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom,
+            // nameProduct, price, quantity, material, size, description
+            //     FROM products
+            //          INNER JOIN images ON products.idProduct = images.idProduct
+            //          INNER JOIN categorys ON products.idCategory = categorys.idCat
+            //          LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+            //             WHERE (images.typeImg = 'Avatar' AND products.idTypesRoom IS NULL) OR
+    		// 				  (images.typeImg = 'Avatar' AND kindofrooms.idRoom IS NOT NULL)
+            //             ORDER BY products.createdAt`
+            const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
+            nameProduct, price, quantity, material, size, description 
+                FROM products 
+                INNER JOIN images ON products.idProduct = images.idProduct 
+                INNER JOIN categorys ON products.idCategory = categorys.idCat 
+                LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
+                    WHERE images.typeImg = 'Avatar' 
+                    AND (products.idProduct = '${search}' OR products.nameProduct LIKE '%${search}%')
+                    AND (categorys.nameCat LIKE '%${category}%' OR categorys.nameCat IS NULL)
+                    AND (kindofrooms.nameRoom LIKE '%${typeroom}%' ${queryTypeRoom})
+                    AND (products.price > ${+price_start} AND products.price <= ${+price_end})
                         ORDER BY products.createdAt`
             const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
             if (rowData.length !== 0) {
@@ -160,6 +175,30 @@ let getProductByPage = (page, limit, searchtext) => {
                 data.limit = limit
                 data.page = page
                 data.total_page = total_page
+                data.data = products
+            } else {
+                data.errCode = 1,
+                    data.errMessage = 'Không tìm thấy danh sản phẩm'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+let getListProduct = () => {
+    return new Promise(async (resolve, reject) => {
+        let data = {};
+
+        try {
+            const query = `SELECT idProduct, nameProduct FROM products ORDER BY createdAt`
+            const products = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if (products.length !== 0) {
+                console.log(products);
+                console.log(products.length);
+                data.errCode = 0
+                data.errMessage = 'Đã lấy danh sách sản phẩm thành công'
                 data.data = products
             } else {
                 data.errCode = 1,
@@ -220,60 +259,26 @@ let deleteProduct = (idProduct) => {
     })
 }
 
-// let getListImages = (idProduct) => {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-//             const query = `SELECT nameImage FROM images WHERE idProduct = '${idProduct}'`;
-//             const result = await sequelize.query(query, {
-//                 type: sequelize.QueryTypes.SELECT,
-//             });
-//             resolve(result);
-//         } catch (error) {
-//             reject(error);
-//         }
-//     })
-// }
-
-// let getListImagesDetail = (idProduct) => {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-//             const query = `SELECT imgUrl FROM images WHERE typeImg = 'Detail' AND idProduct = '${idProduct}'`;
-//             const result = await sequelize.query(query, {
-//                 type: sequelize.QueryTypes.SELECT,
-//             });
-//             resolve(result);
-//         } catch (error) {
-//             reject(error);
-//         }
-//     })
-// }
-
-// let deleteImages = (idProduct) => {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-//             let listImage = await getListImages(idProduct);
-//             console.log(listImage)
-//             if (listImage.length !== 0) {
-//                 for(let i = 0; i < listImage.length; i++) {
-//                     cloudinary.uploader.destroy(listImage[i].nameImage)
-//                 }
-//                 const query = `DELETE FROM images WHERE idProduct = '${idProduct}'`;
-//                 const result = await sequelize.query(query, {
-//                     type: sequelize.QueryTypes.DELETE,
-//                 });
-//             }
-//             resolve();
-//         } catch (error) {
-//             reject(error);
-//         }
-//     })
-// }
-
-
 module.exports = {
     createProduct: createProduct,
     getProductByPage: getProductByPage,
+    getListProduct: getListProduct,
     getInfoProduct: getInfoProduct,
     updateProduct: updateProduct,
     deleteProduct: deleteProduct,
 }
+
+/**
+ * SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
+nameProduct, price, quantity, material, size, description 
+	FROM products 
+    INNER JOIN images ON products.idProduct = images.idProduct 
+    INNER JOIN categorys ON products.idCategory = categorys.idCat 
+    LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
+    	WHERE images.typeImg = 'Avatar' 
+        AND (products.idProduct = '' OR products.nameProduct LIKE '%%')
+        AND (categorys.nameCat LIKE '%%' OR categorys.nameCat IS NULL)
+    	AND (kindofrooms.nameRoom LIKE '%%' OR kindofrooms.nameRoom IS NULL)
+        AND (products.price > 0 AND products.price <= 1000000000)
+        	ORDER BY products.createdAt;
+ */

@@ -12,6 +12,7 @@ router.get('/items', productController.getInfoProduct);
 router.use(verifyToken);
 router.use(isAdmin);
 
+router.get('/all', productController.getListProduct);
 router.post('/addProduct', productController.createProduct);
 router.delete('/:id', productController.deleteProduct);
 router.put('/update/:id', productController.updateProduct);

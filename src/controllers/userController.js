@@ -75,6 +75,26 @@ class UserController {
             })
         }
     }
+
+    //[GET] /api/users/?page=''&limit=''&search=''
+    async getListUserByPage(req, res, next) {
+        let page = req.query.page || 1;
+        let limit = req.query.limit || 20;
+        let searchtext = req.query.search || '';
+
+        let results = await userService.getListUserByPage(page, limit, searchtext);
+
+        try {
+            return res.status(200).json({
+                results
+            })
+        } catch (error) {
+            return res.status(500).json({
+                errCode: -1,
+                errMessage: 'Internal Server Error'
+            })
+        }
+    }
 }
 
 module.exports = new UserController;

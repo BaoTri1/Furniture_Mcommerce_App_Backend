@@ -5,7 +5,7 @@ import isAdmin from '../middlewares/verify_role';
 
 const router = express.Router();
 
-
+router.get('/parentCategory/all', categoryController.getlistParentCategory);
 router.get('/parentCategory/', categoryController.getParentCategoryByPage);
 router.get('/parentCategory/:id', categoryController.getOneParentCategory);
 

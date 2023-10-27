@@ -21,13 +21,13 @@ let handleUserLogin = (sdt, passwd) => {
                     let check = await bcrypt.compareSync(passwd, account[0].password);
                     if (check) {
                         let user = await getInforUser(account[0].idAcc);
-                        const token = JWT.sign({idAcc: account[0].idAcc, isAdmin: account[0].isAdmin}, process.env.JWT_SECRET, {expiresIn: '1d'});
+                        const token = JWT.sign({ idAcc: account[0].idAcc, isAdmin: account[0].isAdmin }, process.env.JWT_SECRET, { expiresIn: '1d' });
                         userData.errCode = 0
                         userData.errMessage = 'Đăng nhập thành công.'
                         userData.isAdmin = account[0].isAdmin
                         userData.userInfor = user
                         userData.access_token = `Bearer ${token}`;
-                        
+
                     } else {
                         userData.errCode = 3
                         userData.errMessage = 'Sai mật khẩu.'
@@ -127,7 +127,7 @@ let handleUserSignup = async (data) => {
                         type: sequelize.QueryTypes.INSERT,
                     });
                     console.log('Inserted record:', result[0]);
-                    if(result[1] === 0){
+                    if (result[1] === 0) {
                         userData.errCode = 5;
                         userData.errMessage = 'Thêm người dùng thất bại.'
                         resolve(userData);
@@ -153,7 +153,7 @@ let handleUserSignup = async (data) => {
                         type: sequelize.QueryTypes.INSERT,
                     });
                     console.log('Inserted record:', result[0]);
-                    if(result[1] === 0){
+                    if (result[1] === 0) {
                         userData.errCode = 5;
                         userData.errMessage = 'Thêm tài khoản thất bại.'
                         resolve(userData);
@@ -163,25 +163,25 @@ let handleUserSignup = async (data) => {
                 }
 
                 try {
-                    const query ="SELECT idAcc, isAdmin FROM accounts WHERE idAcc = :idAcc";
-                    const result =await sequelize.query(query, {
-                        replacements: {idAcc: idAcc},
+                    const query = "SELECT idAcc, isAdmin FROM accounts WHERE idAcc = :idAcc";
+                    const result = await sequelize.query(query, {
+                        replacements: { idAcc: idAcc },
                         type: sequelize.QueryTypes.SELECT,
                     });
                     console.log(result);
-                    if(result.length === 0){
+                    if (result.length === 0) {
                         userData.errCode = 6;
                         userData.errMessage = 'Đăng ký thất bại.'
                         resolve(userData);
-                    }else {
+                    } else {
                         let user = await getInforUser(result[0].idAcc);
-                        const token = JWT.sign({idAcc: result[0].idAcc, isAdmin: result[0].isAdmin}, process.env.JWT_SECRET, {expiresIn: '1d'});
+                        const token = JWT.sign({ idAcc: result[0].idAcc, isAdmin: result[0].isAdmin }, process.env.JWT_SECRET, { expiresIn: '1d' });
                         userData.errCode = 0;
                         userData.errMessage = 'Đăng ký thành công.';
                         userData.userInfor = user
                         userData.access_token = `Bearer ${token}`;
                     }
-                } catch (error) { 
+                } catch (error) {
                     console.log(error);
                 }
 
@@ -197,8 +197,8 @@ let getInforUser = (idAcc) => {
     return new Promise(async (resolve, reject) => {
         try {
             let user = await sequelize.query
-            ("SELECT idUser, idAcc, fullName, sdtUser, email, gender, dateOfBirth, avatar FROM users WHERE idAcc = '" + idAcc + "';"
-                , { type: QueryTypes.SELECT });
+                ("SELECT idUser, idAcc, fullName, sdtUser, email, gender, dateOfBirth, avatar FROM users WHERE idAcc = '" + idAcc + "';"
+                    , { type: QueryTypes.SELECT });
             if (user.length !== 0) {
                 console.log(user[0]);
                 console.log(user.length);
@@ -224,8 +224,55 @@ let hashUserPassword = (passwd) => {
     });
 }
 
+let getListUserByPage = (page, limit, search) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            let total_row;
+            let start = (page - 1) * limit;
+            let total_page;
+
+            const query = `SELECT idUser, fullName, sdtUser, email, gender, dateOfBirth, 
+                        accounts.sdt AS 'username', accounts.createdAt AS 'dayCreateAccount'
+                            FROM users INNER JOIN accounts ON users.idAcc = accounts.idAcc
+                            WHERE users.fullName LIKE '%${search}%' OR users.idUser = '${search}' 
+                            OR users.sdtUser LIKE '%${search}%' OR accounts.sdt LIKE '%${search}%' ORDER BY users.createdAt`
+            const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
+            if (rowData.length !== 0) {
+                total_row = rowData.length;
+            }
+            total_page = Math.ceil(total_row / limit);
+            const users = await sequelize.query(`${query} ASC LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
+            if (users.length !== 0) {
+                console.log(users);
+                console.log(users.length);
+                data.errCode = 0
+                data.errMessage = 'Đã lấy danh sách người dùng thành công'
+                data.total_row = total_row
+                data.limit = limit
+                data.page = page
+                data.total_page = total_page
+                data.data = users
+            } else {
+                data.errCode = 1,
+                data.errMessage = 'Không tìm thấy danh sách người dùng'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+/*
+SELECT idUser, fullName, sdtUser, email, gender, dateOfBirth, accounts.sdt, accounts.createdAt
+FROM `users` INNER JOIN `accounts` ON users.idAcc = accounts.idAcc
+WHERE users.fullName LIKE '%USER1%' OR users.idUser = 'USER1' OR users.sdtUser LIKE '%USER1%' OR accounts.sdt LIKE '%USER1%' 
+*/
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     handleUserSignup: handleUserSignup,
     getInforUser: getInforUser,
+    getListUserByPage: getListUserByPage,
 }

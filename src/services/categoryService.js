@@ -31,6 +31,26 @@ let getParentCategoryByPage = (page, limit) => {
     })
 }
 
+let getlistParentCategory = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            let parCat = await sequelize.query(`SELECT idcatParent, name FROM parentcategorys;`, { type: QueryTypes.SELECT });
+            if (parCat.length !== 0) {
+                data.errCode = 0
+                data.errMessage = 'Lấy dữ liệu nhóm danh mục thành công.'
+                data.data = parCat
+            } else {
+                data.errCode = 1
+                data.errMessage = 'Không tìm thấy dữ liệu'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 let getOneParentCategory = (idcatParent) => {
     return new Promise(async (resolve, reject) => {
         let dataParentCategory = {};
@@ -607,6 +627,7 @@ let deleteTypeRoom = (idTypeRoom) => {
 
 module.exports = {
     getParentCategoryByPage: getParentCategoryByPage,
+    getlistParentCategory: getlistParentCategory,
     getOneParentCategory: getOneParentCategory,
     createParentCategory: createParentCategory,
     updateParentCategory: updateParentCategory,
