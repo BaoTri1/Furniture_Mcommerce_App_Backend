@@ -5,7 +5,8 @@ import productController from '../controllers/productController';
 
 const router = express.Router();
 
-
+router.get('/checkQuantity', productController.checkQuantity);
+router.get('/similar', productController.getListSimilarProduct);
 router.get('/', productController.getProductByPage);
 router.get('/items', productController.getInfoProduct);
 

@@ -17,7 +17,7 @@ class UserController {
             let userData = await userService.handleUserLogin(sdt, passwd);
 
             return res.status(200).json({
-                userData,
+                ...userData
             })
         } catch (error) {
             return res.status(500).json({
@@ -29,37 +29,28 @@ class UserController {
 
     //[POST] /api/users/signup
     async handleSignup(req, res, next) {
-        try {
-            let sdt = req.body.sdt;
-            let passwd = req.body.passwd;
-            let fullName = req.body.fullName;
+        let sdt = req.body.sdt;
+        let passwd = req.body.passwd;
+        let fullName = req.body.fullName;
 
-            console.log(typeof req.body.isAdmin)
-
-            if (!sdt || !passwd || !fullName) {
-                return res.status(400).json({
-                    errCode: -1,
-                    errMessage: "Missing input parameter!"
-                })
-            }
-
-            let userData = await userService.handleUserSignup(req.body);
-            return res.status(200).json({
-                userData
-            })
-        } catch (error) {
-            return res.status(500).json({
+        if (!sdt || !passwd || !fullName) {
+            return res.status(400).json({
                 errCode: -1,
-                errMessage: 'Internal Server Error'
+                errMessage: "Missing input parameter!"
             })
         }
+
+        let userData = await userService.handleUserSignup(req.body);
+        return res.status(200).json({
+            ...userData
+        })
     }
 
     //[GET] /api/users/
     async getInfoUser(req, res, next) {
 
         let { idAcc } = req.account;
-        
+
         let userData = await userService.getInforUser(idAcc);
 
         try {

@@ -47,7 +47,40 @@ class ProductController {
         let results = await productService.getProductByPage(page, limit, category, price, typeroom, search)
 
         return res.status(200).json({
-           results,    
+           ...results   
+        })
+    }
+
+    //GET api/products/similar/?page=''&limit=''&category=''
+    async getListSimilarProduct(req, res, next) {
+        let page = req.query.page || 1;
+        let limit = req.query.limit || 10;
+        let category = req.query.category || '';
+
+        let results = await productService.getListSimilarProduct(page, limit, category)
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/products/checkQuantity?id=''&numCheck=''
+    async checkQuantity(req, res, next) {
+        let id = req.query.id;
+        let numCheck = req.query.numCheck;
+        
+        if(numCheck <= 0) {
+            return res.status(400).json({
+                errCode: -1,
+                errMessage: 'số lượng phải lớn hơn 0.'
+            })
+        }
+
+
+        let results = await productService.checkQuantity(id, numCheck)
+
+        return res.status(200).json({
+           ...results   
         })
     }
 
@@ -68,7 +101,7 @@ class ProductController {
         let results = await productService.getInfoProduct(id)
 
         return res.status(200).json({
-            results
+            ...results
             
         })
     }

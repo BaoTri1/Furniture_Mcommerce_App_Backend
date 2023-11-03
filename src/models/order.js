@@ -21,8 +21,9 @@ module.exports = (sequelize, DataTypes) => {
     nameCustomer: DataTypes.STRING,
     sdtOrder: DataTypes.STRING,
     address: DataTypes.STRING,
-    idStatus: DataTypes.STRING,
+    status: DataTypes.STRING,
     total: DataTypes.DOUBLE,
+    payStatus: DataTypes.BOOLEAN,
     dayCreateAt: DataTypes.DATE,
     dayUpdateAt: DataTypes.DATE,               
   }, {

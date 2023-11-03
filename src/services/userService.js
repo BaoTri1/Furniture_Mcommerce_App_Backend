@@ -2,9 +2,9 @@ import { QueryTypes } from 'sequelize';
 import db, { sequelize } from '../models/index';
 import bcrypt from 'bcryptjs';
 import JWT from 'jsonwebtoken';
+import public_method from '../public/public_method';
 
 const salt = bcrypt.genSaltSync(10);
-const pubMethod = require('../public/public_method');
 
 let handleUserLogin = (sdt, passwd) => {
     return new Promise(async (resolve, reject) => {
@@ -25,7 +25,7 @@ let handleUserLogin = (sdt, passwd) => {
                         userData.errCode = 0
                         userData.errMessage = 'Đăng nhập thành công.'
                         userData.isAdmin = account[0].isAdmin
-                        userData.userInfor = user
+                        userData.user = user
                         userData.access_token = `Bearer ${token}`;
 
                     } else {
@@ -76,8 +76,8 @@ let handleUserSignup = async (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             let hashPassword = await hashUserPassword(data.passwd);
-            let idAcc;
-            let idUser;
+            let idAcc = 'ACC' + public_method.formatDate() + public_method.generateRandomString();;
+            let idUser = 'USER' + public_method.formatDate() + public_method.generateRandomString();;
             let isExist = await checkUserSDT(data.sdt);
             if (isExist) {
                 //return error
@@ -85,31 +85,6 @@ let handleUserSignup = async (data) => {
                 userData.errMessage = 'Số điện thoại đã tồn tại.'
                 resolve(userData);
             } else {
-                const lastaccount = await sequelize.query("SELECT * FROM accounts ORDER BY createdAt DESC LIMIT 1;", {
-                    type: QueryTypes.SELECT
-                });
-                const lastuser = await sequelize.query("SELECT * FROM users ORDER BY createdAt DESC LIMIT 1;", {
-                    type: QueryTypes.SELECT
-                });
-
-                if (lastuser.length === 0) {
-                    idUser = 'USER1';
-                    console.log(idUser);
-                } else {
-                    //Tao idUser mới bằng cách lấy số cuối của idUser cuối bảng cộng thêm 1 rồi thêm vào chuỗi 'USER'
-                    idUser = 'USER' + (pubMethod.parseIdtoInt(lastuser[0].idUser) + 1);
-                    console.log(idUser);
-                }
-
-                if (lastaccount.length === 0) {
-                    idAcc = 'ACC1';
-                    console.log(idAcc);
-                } else {
-                    //Tao idAcc mới bằng cách lấy số cuối của idAcc cuối bảng cộng thêm 1 rồi thêm vào chuỗi 'ACC'
-                    idAcc = 'ACC' + (pubMethod.parseIdtoInt(lastaccount[0].idAcc) + 1);
-                    console.log(idAcc);
-                }
-
                 //Insert users vào database
                 try {
                     const query = `INSERT INTO users (idUser, idAcc, fullName, createdAt, updatedAt) VALUES
@@ -178,13 +153,12 @@ let handleUserSignup = async (data) => {
                         const token = JWT.sign({ idAcc: result[0].idAcc, isAdmin: result[0].isAdmin }, process.env.JWT_SECRET, { expiresIn: '1d' });
                         userData.errCode = 0;
                         userData.errMessage = 'Đăng ký thành công.';
-                        userData.userInfor = user
+                        userData.user = user
                         userData.access_token = `Bearer ${token}`;
                     }
                 } catch (error) {
                     console.log(error);
                 }
-
             }
             resolve(userData);
         } catch (error) {
@@ -255,7 +229,7 @@ let getListUserByPage = (page, limit, search) => {
                 data.data = users
             } else {
                 data.errCode = 1,
-                data.errMessage = 'Không tìm thấy danh sách người dùng'
+                    data.errMessage = 'Không tìm thấy danh sách người dùng'
             }
             resolve(data);
         } catch (error) {

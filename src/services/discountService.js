@@ -210,10 +210,64 @@ let deleteDiscount = (idDiscount) => {
     })
 }
 
+let updateQuantityDiscount = (idDiscount) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const queryQuantity = `SELECT numDiscount FROM discounts WHERE idDiscount = '${idDiscount}'`;
+            const resultQuatity = await sequelize.query(queryQuantity, {
+                type: sequelize.QueryTypes.SELECT,
+            });
+            if (resultQuatity.length !== 0) {
+                let quantity = resultQuatity[0].quantity;
+                let newQuatity;
+                if(quantity > 0){
+                    newQuatity = +quantity - 1;
+                    try {
+                        const query = `UPDATE discounts SET nameDiscount = :nameDiscount, updatedAt = :updatedAt 
+                                        WHERE idDiscount = '${idDiscount}';`;
+                        const values = {
+                            nameDiscount: newQuatity,
+                            updatedAt: new Date(),
+                        };
+            
+                        const result = await sequelize.query(query, {
+                            replacements: values,
+                            type: sequelize.QueryTypes.UPDATE,
+                        });
+            
+                        console.log('Inserted record:', result[0]);
+                        if (result[1] === 0) {
+                            data.errCode = 1;
+                            data.errMessage = 'Cập nhật số lượng khuyến mãi thất bại.'
+                        } else {
+                            data.errCode = 0;
+                            data.errMessage = 'Cập nhật số lượng khuyến mãi thành công.'
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                } else {
+                    data.errCode = 2;
+                    data.errMessage = 'Số lượng khuyến mãi đã hết.'
+                }
+            } else {
+                data.errCode = 1;
+                data.errMessage = 'Lấy số lượng khuyến mãi thất bại.'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 module.exports = {
     getDiscountByPage: getDiscountByPage,
     getListDiscount: getListDiscount,
     createDiscount: createDiscount,
     updateDiscount: updateDiscount,
     deleteDiscount: deleteDiscount,
+
+    updateQuantityDiscount: updateQuantityDiscount,
 }

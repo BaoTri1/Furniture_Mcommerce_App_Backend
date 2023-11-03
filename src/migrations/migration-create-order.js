@@ -41,6 +41,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DOUBLE
       },
+      payStatus: {
+        allowNull: false,
+        type: Sequelize.BOOLEAN
+      },
       dayCreateAt: {
         allowNull: false,
         type: Sequelize.DATE
