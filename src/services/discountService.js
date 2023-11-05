@@ -31,7 +31,7 @@ let getDiscountByPage = (page, limit, search) => {
                 data.limit = limit
                 data.page = page
                 data.total_page = total_page
-                data.data = discounts
+                data.discounts = discounts
             } else {
                 data.errCode = 1,
                 data.errMessage = 'Không tìm thấy khuyến mãi'
@@ -262,6 +262,36 @@ let updateQuantityDiscount = (idDiscount) => {
     })
 }
 
+let checkQuantity = (idDiscount) => {
+    return new Promise(async (resolve, reject) =>{
+        try {
+            let data = {};
+            const queryQuantity = `SELECT numDiscount FROM discounts WHERE idDiscount = '${idDiscount}'`;
+            const resultQuatity = await sequelize.query(queryQuantity, {
+                type: sequelize.QueryTypes.SELECT,
+            });
+            if (resultQuatity.length !== 0) {
+                let quantity = resultQuatity[0].numDiscount;
+                if (quantity > 0) {
+                    data.errCode = 0;
+                    data.errMessage = 'Mã giảm giá vẫn còn.'
+                }
+                else {
+                    data.errCode = 1;
+                    data.errMessage = 'Đã hết mã giảm giá.'
+                }
+
+            } else {
+                data.errCode = 2;
+                data.errMessage = 'Lấy số lượng mã giảm giá thất bại.'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 module.exports = {
     getDiscountByPage: getDiscountByPage,
     getListDiscount: getListDiscount,
@@ -270,4 +300,5 @@ module.exports = {
     deleteDiscount: deleteDiscount,
 
     updateQuantityDiscount: updateQuantityDiscount,
+    checkQuantity: checkQuantity,
 }

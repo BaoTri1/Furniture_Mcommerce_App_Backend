@@ -49,7 +49,18 @@ class DiscountController {
         let results = await discountService.getDiscountByPage(page, limit, search)
 
         return res.status(200).json({
-           results,    
+           ...results,    
+        })
+    }
+
+    //GET api/discounts/checkQuantity?id=''
+    async checkQuantity(req, res, next) {
+        let id = req.query.id;
+
+        let results = await discountService.checkQuantity(id)
+
+        return res.status(200).json({
+           ...results   
         })
     }
 

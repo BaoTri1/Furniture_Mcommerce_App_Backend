@@ -8,6 +8,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       nameImage: {
+        primaryKey: true,
         allowNull: false,
         type: Sequelize.STRING
       },

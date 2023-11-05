@@ -11,10 +11,6 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING
       },
-      idDiscount: {
-        allowNull: true,
-        type: Sequelize.STRING
-      }, 
       numProduct: {
         allowNull: false,
         type: Sequelize.INTEGER

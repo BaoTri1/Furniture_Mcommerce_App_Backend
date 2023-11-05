@@ -139,22 +139,25 @@ let getProductByPage = (page, limit, category, price, typeroom, search) => {
         const [price_start, price_end] = price.split('-');
 
         try {
-            // const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom,
-            // nameProduct, price, quantity, material, size, description
-            //     FROM products
-            //          INNER JOIN images ON products.idProduct = images.idProduct
-            //          INNER JOIN categorys ON products.idCategory = categorys.idCat
-            //          LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
-            //             WHERE (images.typeImg = 'Avatar' AND products.idTypesRoom IS NULL) OR
-            // 				  (images.typeImg = 'Avatar' AND kindofrooms.idRoom IS NOT NULL)
+            // const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
+            // nameProduct, price, quantity, material, size, description 
+            //     FROM products 
+            //     INNER JOIN images ON products.idProduct = images.idProduct 
+            //     INNER JOIN categorys ON products.idCategory = categorys.idCat 
+            //     LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
+            //         WHERE images.typeImg = 'Avatar' 
+            //         AND (products.idProduct = '${search}' OR products.nameProduct LIKE '%${search}%')
+            //         AND (categorys.nameCat LIKE '%${category}%' OR categorys.nameCat IS NULL)
+            //         AND (kindofrooms.nameRoom LIKE '%${typeroom}%' ${queryTypeRoom})
+            //         AND (products.price > ${!+price_start ? 0 : +price_start} 
+            //                 AND products.price <= ${!+price_end ? 1000000000 : +price_end})
             //             ORDER BY products.createdAt`
-            //INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent
-            // WHERE images.typeImg = 'Avatar'
-            // AND parentcategorys.idcatParent = 'CP2'
-            const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
+            const query = `SELECT products.idProduct, images.imgUrl, discounts.nameDiscount, discounts.value,
+            discounts.dayStart, discounts.dayEnd, categorys.nameCat, kindofrooms.nameRoom, 
             nameProduct, price, quantity, material, size, description 
                 FROM products 
                 INNER JOIN images ON products.idProduct = images.idProduct 
+                LEFT JOIN discounts ON products.idProduct = discounts.idProduct
                 INNER JOIN categorys ON products.idCategory = categorys.idCat 
                 LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
                     WHERE images.typeImg = 'Avatar' 
@@ -263,13 +266,24 @@ let getInfoProduct = (idProduct) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
         try {
-            const query = `SELECT products.idProduct, images.imgUrl, categorys.idCat, categorys.nameCat, kindofrooms.idRoom, kindofrooms.nameRoom,
-            nameProduct, price, quantity, material, size, description
+            // const query = `SELECT products.idProduct, images.imgUrl, categorys.idCat, categorys.nameCat, kindofrooms.idRoom, kindofrooms.nameRoom,
+            // nameProduct, price, quantity, material, size, description
+            //     FROM products
+            //          INNER JOIN images ON products.idProduct = images.idProduct
+            //          INNER JOIN categorys ON products.idCategory = categorys.idCat
+            //          LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+            //             WHERE images.typeImg = 'Avatar' AND products.idProduct = '${idProduct}'`
+
+            const query = `SELECT products.idProduct, images.imgUrl, discounts.nameDiscount, discounts.value, discounts.dayStart, discounts.dayEnd,
+			categorys.idCat, categorys.nameCat, kindofrooms.idRoom, kindofrooms.nameRoom, nameProduct, price, quantity,
+            material, size, description
                 FROM products
                      INNER JOIN images ON products.idProduct = images.idProduct
+                     LEFT JOIN discounts ON products.idProduct = discounts.idProduct
                      INNER JOIN categorys ON products.idCategory = categorys.idCat
                      LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
                         WHERE images.typeImg = 'Avatar' AND products.idProduct = '${idProduct}'`
+            
             const product = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
             if (product.length !== 0) {
                 console.log(product);

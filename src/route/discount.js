@@ -5,6 +5,7 @@ import discountController from '../controllers/discountController';
 
 const router = express.Router();
 
+router.get('/checkQuantity', discountController.checkQuantity);
 router.get('/', discountController.getDiscountByPage);
 
 router.use(verifyToken);
