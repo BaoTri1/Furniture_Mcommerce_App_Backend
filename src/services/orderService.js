@@ -10,18 +10,7 @@ let createOrder = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             let dataOrder = {};
-            let idOrder = public_method.formatDate() + public_method.generateRandomString();
-            // const lastorder = await sequelize.query("SELECT * FROM orders ORDER BY createdAt DESC LIMIT 1;", {
-            //     type: QueryTypes.SELECT
-            // });
-            // if (lastorder.length === 0) {
-            //     idOrder = 'ORDER1';
-            //     console.log(idOrder);
-            // } else {
-            //     //Tao idOrder mới bằng cách lấy số cuối của idUser cuối bảng cộng thêm 1 rồi thêm vào chuỗi 'ORDER'
-            //     idOrder = 'ORDER' + (public_method.parseIdtoInt(lastorder[0].idOrder) + 1);
-            //     console.log(idOrder);
-            // }
+            let idOrder = 'ORDER' + public_method.formatDate() + public_method.generateRandomString();
 
             //Insert to database
             try {
@@ -75,22 +64,11 @@ let createOrder = (data) => {
                                 dataOrder.errCode = 2;
                                 dataOrder.errMessage = 'Tạo đơn hàng thất bại.'
                             }
-
-                            if (data.products[i].discount !== null ||
-                                data.products[i].discount !== undefined || data.products[i].discount !== '') {
-
-                                let resultUpdateQuantityDiscount =
-                                    await discountService.updateQuantityDiscount(
-                                        data.products[i].discount
-                                    );
-                                if (resultUpdateQuantityDiscount.errCode === 1) {
-                                    dataOrder.errCode = 2;
-                                    dataOrder.errMessage = 'Tạo đơn hàng thất bại.'
-                                }
-                            }
-
                         }
                     }
+
+                    let order = await getInforOrder(idOrder);
+                    dataOrder.orders = order.orders
                 }
             } catch (error) {
                 console.log(error);
@@ -106,13 +84,12 @@ let createDetailOrder = (idOrder, product) => {
     return new Promise(async (resolve, reject) => {
         try {
             let data = {};
-            const query = `INSERT INTO detailorder (idOrder, idProduct, idDiscount, numProduct,
-                 createdAt, updatedAt) VALUES (:idOrder, :idProduct, :idDiscount, :numProduct, :createdAt, :updatedAt)`
+            const query = `INSERT INTO detailorder (idOrder, idProduct, numProduct,
+                 createdAt, updatedAt) VALUES (:idOrder, :idProduct, :numProduct, :createdAt, :updatedAt)`
 
             const values = {
                 idOrder: idOrder,
                 idProduct: product.idProduct,
-                idDiscount: product.idDiscount,
                 numProduct: product.numProduct,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -136,27 +113,342 @@ let createDetailOrder = (idOrder, product) => {
     })
 }
 
-let updateOrder = (idOrder, data) => { }
+let updateOrder = (idOrder, data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let dataOrder = {};
+            const query = `UPDATE orders SET nameCustomer = :nameCustomer, sdtOrder = :sdtOrder, address = :address,
+            status = :status, payStatus = :payStatus, dayUpdateAt = :dayUpdateAt,
+             updatedAt = :updatedAt WHERE idOrder = '${idOrder}';`;
+            const values = {
+                nameCustomer: data.nameCustomer,
+                sdtOrder: data.sdtOrder,
+                address: data.address,
+                status: data.status,
+                payStatus: data.payStatus,
+                dayUpdateAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            const result = await sequelize.query(query, {
+                replacements: values,
+                type: sequelize.QueryTypes.UPDATE,
+            });
+
+            console.log('Inserted record:', result[0]);
+            if (result[1] === 0) {
+                dataOrder.errCode = 1;
+                dataOrder.errMessage = 'Cập nhật sản phẩm thất bại.'
+            } else {
+                dataOrder.errCode = 0;
+                dataOrder.errMessage = 'Cập nhật sản phẩm thành công.'
+            }
+            resolve(dataOrder);
+        } catch (error) {
+            reject(error);
+        }
+    });
+ }
 
 let deleteOrder = (idOrder) => { }
 
-let getOrderByPage = (page, limit) => { }
+let getOrderByPage = (page, limit, status, dayCreate, dayUpdate, search, price) => {
+    return new Promise(async (resolve, reject) => {
+        let data = {};
+        let total_row;
+        let start = (page - 1) * limit;
+        let total_page;
+        const [price_start, price_end] = price.split('-');
 
-let getListOrder = () => { }
+        // const queryTypeRoom = !typeroom ? `OR kindofrooms.nameRoom IS NULL` : `AND kindofrooms.nameRoom IS NOT NULL`
+        // const [price_start, price_end] = price.split('-');
+        // const date = dateformat();
 
-let getListOrderDeliveresForUser = (idUser, page, limit) => { }
+        try {
+            const query = `SELECT orders.idOrder, dayCreateAt, dayUpdateAt, nameCustomer, sdtOrder,
+            status.idStatus, status.name, payStatus, total
+                FROM orders LEFT JOIN status ON orders.status = status.idStatus
+                WHERE status.idStatus LIKE '%${status}%' 
+                AND orders.dayCreateAt LIKE '%${dayCreate}%'
+                AND orders.dayUpdateAt LIKE '%${dayUpdate}%'
+                AND (orders.idOrder LIKE '%${search}%' OR nameCustomer LIKE '%${search}%' OR sdtOrder LIKE '%${search}%')
+                AND (orders.total > ${!+price_start ? 0 : +price_start} 
+                    AND orders.total <= ${!+price_end ? 1000000000 : +price_end})
+                    ORDER BY orders.createdAt`
 
-let getListOrderProcessingForUser = (idUser, page, limit) => { }
+            const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
+            if (rowData.length !== 0) {
+                total_row = rowData.length;
+            }
+            total_page = Math.ceil(total_row / limit);
+            const orders = await sequelize.query(`${query} ASC LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
+            if (orders.length !== 0) {
+                console.log(orders);
+                console.log(orders.length);
+                data.errCode = 0
+                data.errMessage = 'Đã lấy danh sách đơn hàng thành công'
+                data.total_row = total_row
+                data.limit = limit
+                data.page = page
+                data.total_page = total_page
+                data.orders = orders
+            } else {
+                data.errCode = 1,
+                    data.errMessage = 'Không tìm thấy danh sách đơn hàng'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
 
-let getListOrderCancleForUser = (idUser, page, limit) => { }
+let getInforOrder = (idOrder) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const query = `SELECT idOrder, nameCustomer AS NameCustomer, sdtOrder AS SDT, address, 
+            status.idStatus, status.name, total, payStatus AS StatusPayment, dayCreateAt, dayUpdateAt
+                         FROM orders 
+                             LEFT JOIN status ON orders.status = status.idStatus 
+                                 WHERE idOrder = '${idOrder}'`;
+
+            const order = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if(order.length !== 0){
+                let detailorder = await getDetailOrder(idOrder);
+                if(detailorder.errCode == 0){
+                    data.errCode = 0
+                    data.errMessage = 'Lấy đơn hàng thành công'
+                    data.orders = {...order[0], DetailOrder: detailorder.orders}
+                }
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Lấy đơn hàng thất bại'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+let getDetailOrder = (idOrder) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const query = `SELECT
+            detailorder.idProduct,
+            products.nameProduct,
+            products.price AS originalPrice,
+            CASE
+                WHEN discounts.value IS NOT NULL AND discounts.dayStart <= orders.dayCreateAt AND discounts.dayEnd >= orders.dayCreateAt
+                THEN products.price - (products.price * discounts.value / 100)
+                ELSE products.price
+            END AS finalPrice,
+            numProduct
+                FROM
+                    detailorder
+                LEFT JOIN
+                    products ON detailorder.idProduct = products.idProduct
+                LEFT JOIN
+                    discounts ON products.idProduct = discounts.idProduct
+                LEFT JOIN
+                    orders ON orders.idOrder = detailorder.idOrder
+                WHERE
+                    detailorder.idOrder = '${idOrder}'`;
+
+            const detailorder = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if(detailorder.length !== 0){
+                data.errCode = 0
+                data.errMessage = 'Lấy đơn hàng thành công'
+                data.orders = detailorder
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Lấy đơn hàng thất bại'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+let getListOrder = () => {}
+
+let getListOrderDeliveresForUser = (idUser, page, limit) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const query = `SELECT
+            orders.idOrder,
+            orders.dayCreateAt,
+            SUM(detailorder.numProduct) AS Quantity,
+            orders.total,
+            status.name
+        FROM
+            orders
+        INNER JOIN
+            status ON orders.status = status.idStatus
+        LEFT JOIN
+            detailorder ON orders.idOrder = detailorder.idOrder
+        WHERE
+            status.name = 'Đã giao hàng thành công'
+            AND orders.idUser = '${idUser}'
+        GROUP BY
+            orders.idOrder, orders.dayCreateAt, orders.total, status.name;`;
+
+            const orders = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if(orders.length !== 0){
+                data.errCode = 0
+                data.errMessage = 'Lấy danh sách đơn hàng thành công'
+                data.orders = orders
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Lấy danh sách đơn hàng thất bại'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });
+ }
+
+let getListOrderProcessingForUser = (idUser, page, limit) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const query = `SELECT
+            orders.idOrder,
+            orders.dayCreateAt,
+            SUM(detailorder.numProduct) AS Quantity,
+            orders.total,
+            status.name
+        FROM
+            orders
+        INNER JOIN
+            status ON orders.status = status.idStatus
+        LEFT JOIN
+            detailorder ON orders.idOrder = detailorder.idOrder
+        WHERE
+            status.name = 'Đang chờ xử lý'
+            AND orders.idUser = '${idUser}'
+        GROUP BY
+            orders.idOrder, orders.dayCreateAt, orders.total, status.name;`;
+
+            const orders = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if(orders.length !== 0){
+                data.errCode = 0
+                data.errMessage = 'Lấy danh sách đơn hàng thành công'
+                data.orders = orders
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Lấy danh sách đơn hàng thất bại'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });
+ }
+
+let getListOrderCancleForUser = (idUser, page, limit) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const query = `SELECT
+            orders.idOrder,
+            orders.dayCreateAt,
+            SUM(detailorder.numProduct) AS Quantity,
+            orders.total,
+            status.name
+        FROM
+            orders
+        INNER JOIN
+            status ON orders.status = status.idStatus
+        LEFT JOIN
+            detailorder ON orders.idOrder = detailorder.idOrder
+        WHERE
+            status.name = 'Đã hủy'
+            AND orders.idUser = '${idUser}'
+        GROUP BY
+            orders.idOrder, orders.dayCreateAt, orders.total, status.name;`;
+
+            const orders = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if(orders.length !== 0){
+                data.errCode = 0
+                data.errMessage = 'Lấy danh sách đơn hàng thành công'
+                data.orders = orders
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Lấy danh sách đơn hàng thất bại'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+
+let getListStatus = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            const query = `SELECT idStatus, name FROM status`;
+
+            const status = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if(status.length !== 0){
+                data.errCode = 0
+                data.errMessage = 'Lấy danh sách trạng thái thành công'
+                data.status = status
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Lấy danh sách trạng thái thất bại'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
 
 module.exports = {
     createOrder: createOrder,
     updateOrder: updateOrder,
     deleteOrder: deleteOrder,
+    getInforOrder: getInforOrder,
+    getDetailOrder: getDetailOrder,
     getOrderByPage: getOrderByPage,
     getListOrder: getListOrder,
     getListOrderDeliveresForUser: getListOrderDeliveresForUser,
     getListOrderProcessingForUser: getListOrderProcessingForUser,
     getListOrderCancleForUser: getListOrderCancleForUser,
+
+    getListStatus: getListStatus,
 }
+
+/**
+ * SELECT
+    orders.idOrder,
+    orders.dayCreateAt,
+    SUM(detailorder.numProduct) AS Quantity,
+    orders.total,
+    status.name
+FROM
+    orders
+INNER JOIN
+    status ON orders.status = status.idStatus
+LEFT JOIN
+    detailorder ON orders.idOrder = detailorder.idOrder
+WHERE
+    status.name = 'Đang chờ xử lý'
+    AND orders.idUser = 'USER20231030XGJlr'
+GROUP BY
+    orders.idOrder, orders.dayCreateAt, orders.total, status.name;
+ */

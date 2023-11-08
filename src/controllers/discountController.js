@@ -64,6 +64,18 @@ class DiscountController {
         })
     }
 
+    //GET api/discounts/checkDiscountValid?id=''
+    async checkDiscountValid(req, res, next) {
+        //id là id của sản phẩm
+        let id = req.query.id;
+
+        let results = await discountService.checkDiscountValid(id)
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
     //PUT api/discounts/update/:id
     async updateDiscount(req, res, next) {
         let idDiscount = req.params.id;

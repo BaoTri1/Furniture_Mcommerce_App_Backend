@@ -4,6 +4,17 @@ import public_method from '../public/public_method';
 
 import imageService from '../services/imageService';
 
+const dateformat = () => {
+    const date = new Date();
+    const addLeadingZero = (number) => (number < 10 ? '0' : '') + number;
+
+    // Định dạng ngày giờ theo định dạng "YYYY-MM-DD HH:MI:SS"
+    const formattedDateTime = `${date.getFullYear()}-${addLeadingZero(date.getMonth() + 1)}-${addLeadingZero(date.getDate())} ${addLeadingZero(date.getHours())}:${addLeadingZero(date.getMinutes())}:${addLeadingZero(date.getSeconds())}`;
+    
+    console.log("Ngày giờ định dạng SQL:", formattedDateTime);
+    return formattedDateTime;
+}
+
 let createProduct = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -128,7 +139,7 @@ let updateProduct = (idProduct, data) => {
     });
 }
 
-let getProductByPage = (page, limit, category, price, typeroom, search) => {
+let getProductByPage = (page, limit, category, price, typeroom, search, idCatPar) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
         let total_row;
@@ -137,12 +148,15 @@ let getProductByPage = (page, limit, category, price, typeroom, search) => {
 
         const queryTypeRoom = !typeroom ? `OR kindofrooms.nameRoom IS NULL` : `AND kindofrooms.nameRoom IS NOT NULL`
         const [price_start, price_end] = price.split('-');
+        const date = dateformat();
 
         try {
-            // const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
+            // const query = `SELECT products.idProduct, images.imgUrl, discounts.nameDiscount, discounts.value,
+            // discounts.dayStart, discounts.dayEnd, categorys.nameCat, kindofrooms.nameRoom, 
             // nameProduct, price, quantity, material, size, description 
             //     FROM products 
             //     INNER JOIN images ON products.idProduct = images.idProduct 
+            //     LEFT JOIN discounts ON products.idProduct = discounts.idProduct
             //     INNER JOIN categorys ON products.idCategory = categorys.idCat 
             //     LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
             //         WHERE images.typeImg = 'Avatar' 
@@ -152,21 +166,72 @@ let getProductByPage = (page, limit, category, price, typeroom, search) => {
             //         AND (products.price > ${!+price_start ? 0 : +price_start} 
             //                 AND products.price <= ${!+price_end ? 1000000000 : +price_end})
             //             ORDER BY products.createdAt`
-            const query = `SELECT products.idProduct, images.imgUrl, discounts.nameDiscount, discounts.value,
-            discounts.dayStart, discounts.dayEnd, categorys.nameCat, kindofrooms.nameRoom, 
-            nameProduct, price, quantity, material, size, description 
-                FROM products 
-                INNER JOIN images ON products.idProduct = images.idProduct 
-                LEFT JOIN discounts ON products.idProduct = discounts.idProduct
-                INNER JOIN categorys ON products.idCategory = categorys.idCat 
-                LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
-                    WHERE images.typeImg = 'Avatar' 
-                    AND (products.idProduct = '${search}' OR products.nameProduct LIKE '%${search}%')
-                    AND (categorys.nameCat LIKE '%${category}%' OR categorys.nameCat IS NULL)
-                    AND (kindofrooms.nameRoom LIKE '%${typeroom}%' ${queryTypeRoom})
-                    AND (products.price > ${!+price_start ? 0 : +price_start} 
-                            AND products.price <= ${!+price_end ? 1000000000 : +price_end})
-                        ORDER BY products.createdAt`
+            
+            const query = `SELECT
+            products.idProduct,
+            images.imgUrl,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.nameDiscount
+                ELSE
+                    NULL
+            END AS nameDiscount,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.value
+                ELSE
+                    NULL
+            END AS value,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.dayStart
+                ELSE
+                    NULL
+            END AS dayStart,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.dayEnd
+                ELSE
+                    NULL
+            END AS dayEnd,
+            categorys.nameCat,
+            kindofrooms.nameRoom,
+            nameProduct,
+            price,
+            quantity,
+            material,
+            size,
+            description
+        FROM
+            products
+        INNER JOIN
+            images ON products.idProduct = images.idProduct
+        LEFT JOIN
+            discounts ON products.idProduct = discounts.idProduct
+        INNER JOIN
+            categorys ON products.idCategory = categorys.idCat
+        LEFT JOIN
+            kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+        LEFT JOIN 
+            parentcategorys ON parentcategorys.idcatParent = categorys.catParent
+        WHERE
+            images.typeImg = 'Avatar'
+            AND (products.idProduct = '${search}' OR products.nameProduct LIKE '%${search}%')
+            AND parentcategorys.idcatParent LIKE '%${idCatPar}%'
+            AND (categorys.nameCat LIKE '%${category}%' OR categorys.nameCat IS NULL)
+            AND (kindofrooms.nameRoom LIKE '%${typeroom}%' ${queryTypeRoom})
+            AND (products.price > ${!+price_start ? 0 : +price_start} 
+                        AND products.price <= ${!+price_end ? 1000000000 : +price_end})
+                 ORDER BY products.createdAt`
+
             const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
             if (rowData.length !== 0) {
                 total_row = rowData.length;
@@ -200,17 +265,74 @@ let getListSimilarProduct = (page, limit, category) => {
         let total_row;
         let start = (page - 1) * limit;
         let total_page;
+        const date = dateformat();
 
         try {
-            const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
-            nameProduct, price, quantity, material, size, description 
-                FROM products 
-                INNER JOIN images ON products.idProduct = images.idProduct 
-                INNER JOIN categorys ON products.idCategory = categorys.idCat 
-                LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
-                    WHERE images.typeImg = 'Avatar' 
-                    AND categorys.nameCat = '${category}'
-                        ORDER BY products.createdAt`
+            // const query = `SELECT products.idProduct, images.imgUrl, images.typeImg, categorys.nameCat, kindofrooms.nameRoom, 
+            // nameProduct, price, quantity, material, size, description 
+            //     FROM products 
+            //     INNER JOIN images ON products.idProduct = images.idProduct 
+            //     INNER JOIN categorys ON products.idCategory = categorys.idCat 
+            //     LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom 
+            //         WHERE images.typeImg = 'Avatar' 
+            //         AND categorys.nameCat = '${category}'
+            //             ORDER BY products.createdAt`
+            
+            const query = `SELECT
+            products.idProduct,
+            images.imgUrl,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.nameDiscount
+                ELSE
+                    NULL
+            END AS nameDiscount,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.value
+                ELSE
+                    NULL
+            END AS value,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.dayStart
+                ELSE
+                    NULL
+            END AS dayStart,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.dayEnd
+                ELSE
+                    NULL
+            END AS dayEnd,
+            categorys.nameCat,
+            kindofrooms.nameRoom,
+            nameProduct,
+            price,
+            quantity,
+            material,
+            size,
+            description
+        FROM
+            products
+        INNER JOIN
+            images ON products.idProduct = images.idProduct
+        LEFT JOIN
+            discounts ON products.idProduct = discounts.idProduct
+        INNER JOIN
+            categorys ON products.idCategory = categorys.idCat
+        LEFT JOIN
+            kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+        WHERE images.typeImg = 'Avatar' AND categorys.nameCat = '${category}'
+                     ORDER BY products.createdAt`
             const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
             if (rowData.length !== 0) {
                 total_row = rowData.length;
@@ -265,24 +387,73 @@ let getListProduct = () => {
 let getInfoProduct = (idProduct) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
+        const date = dateformat();
+
         try {
-            // const query = `SELECT products.idProduct, images.imgUrl, categorys.idCat, categorys.nameCat, kindofrooms.idRoom, kindofrooms.nameRoom,
-            // nameProduct, price, quantity, material, size, description
+            // const query = `SELECT products.idProduct, images.imgUrl, discounts.nameDiscount, discounts.value, discounts.dayStart, discounts.dayEnd,
+			// categorys.idCat, categorys.nameCat, kindofrooms.idRoom, kindofrooms.nameRoom, nameProduct, price, quantity,
+            // material, size, description
             //     FROM products
             //          INNER JOIN images ON products.idProduct = images.idProduct
+            //          LEFT JOIN discounts ON products.idProduct = discounts.idProduct
             //          INNER JOIN categorys ON products.idCategory = categorys.idCat
             //          LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
             //             WHERE images.typeImg = 'Avatar' AND products.idProduct = '${idProduct}'`
 
-            const query = `SELECT products.idProduct, images.imgUrl, discounts.nameDiscount, discounts.value, discounts.dayStart, discounts.dayEnd,
-			categorys.idCat, categorys.nameCat, kindofrooms.idRoom, kindofrooms.nameRoom, nameProduct, price, quantity,
-            material, size, description
-                FROM products
-                     INNER JOIN images ON products.idProduct = images.idProduct
-                     LEFT JOIN discounts ON products.idProduct = discounts.idProduct
-                     INNER JOIN categorys ON products.idCategory = categorys.idCat
-                     LEFT JOIN kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
-                        WHERE images.typeImg = 'Avatar' AND products.idProduct = '${idProduct}'`
+            const query = `SELECT
+            products.idProduct,
+            images.imgUrl,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.nameDiscount
+                ELSE
+                    NULL
+            END AS nameDiscount,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.value
+                ELSE
+                    NULL
+            END AS value,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.dayStart
+                ELSE
+                    NULL
+            END AS dayStart,
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.dayEnd
+                ELSE
+                    NULL
+            END AS dayEnd,
+            categorys.nameCat,
+            kindofrooms.nameRoom,
+            nameProduct,
+            price,
+            quantity,
+            material,
+            size,
+            description
+        FROM
+            products
+        INNER JOIN
+            images ON products.idProduct = images.idProduct
+        LEFT JOIN
+            discounts ON products.idProduct = discounts.idProduct
+        INNER JOIN
+            categorys ON products.idCategory = categorys.idCat
+        LEFT JOIN
+            kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+            WHERE images.typeImg = 'Avatar' AND products.idProduct = '${idProduct}'`
             
             const product = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
             if (product.length !== 0) {

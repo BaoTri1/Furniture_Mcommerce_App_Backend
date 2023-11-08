@@ -169,6 +169,17 @@ class CategoryController {
         })
     }
 
+    //GET api/categories/list/?search=''&idCatParent=''&nameroom=''
+    async getlistCategoryformobile(req, res, next) {
+        let search = req.query.search || '';
+        let idCatParent = req.query.idCatParent || '';
+        let nameroom = req.query.nameroom || '';
+        let results = await categoryService.getlistCategoryForMobile(search, idCatParent, nameroom);
+        return res.status(200).json({
+            ...results
+        })
+    }
+
     //GET api/categories//KindOfRoom/:id
     async getOneKindOfRoom(req, res, next) {
         let idRoom = req.params.id;

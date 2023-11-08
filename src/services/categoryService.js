@@ -366,6 +366,42 @@ let getlistCategory = () => {
     })
 }
 
+
+let getlistCategoryForMobile = (search, idCatParent, nameroom) => {
+    return new Promise(async (resolve, reject) => {
+        let data = {};
+        const queryTypeRoom = !nameroom ? `OR kindofrooms.nameRoom IS NULL` : `AND kindofrooms.nameRoom IS NOT NULL`
+        try {
+            const query = `SELECT DISTINCT categorys.idCat, categorys.nameCat
+                    FROM
+                        categorys
+                    INNER JOIN
+                        products ON categorys.idCat = products.idCategory
+                    LEFT JOIN
+                        kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+                    INNER JOIN
+                        parentcategorys ON parentcategorys.idcatParent = categorys.catParent
+                        WHERE categorys.nameCat LIKE '%${search}%' 
+                        AND parentcategorys.idcatParent LIKE '%${idCatParent}%' 
+                        AND (kindofrooms.nameRoom LIKE '%${nameroom}%' ${queryTypeRoom})`
+            const categorys = await sequelize.query(`${query}`, { type: QueryTypes.SELECT });
+            if (categorys.length !== 0) {
+                console.log(categorys);
+                console.log(categorys.length);
+                data.errCode = 0
+                data.errMessage = 'Đã lấy danh sách danh mục sản phẩm thành công'
+                data.categorys = categorys
+            } else {
+                data.errCode = 1,
+                data.errMessage = 'Không tìm thấy danh mục sản'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 let updateCategory = (idCat, data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -639,6 +675,7 @@ module.exports = {
     createCategory: createCategory,
     updateCategory: updateCategory,
     deleteCategory: deleteCategory,
+    getlistCategoryForMobile: getlistCategoryForMobile,
 
     getOneTypeRoom: getOneTypeRoom,
     getListKindOfRoom: getListKindOfRoom,
@@ -653,3 +690,17 @@ module.exports = {
 //          INNER JOIN parentcategorys ON categorys.catParent = parentcategorys.idcatParent
 //          WHERE categorys.nameCat LIKE '%C3%' || categorys.idCat LIKE '%C3%' || parentcategorys.name LIKE '%C3%'
 //             ORDER BY categorys.createdAt ASC LIMIT 0, 10;
+
+
+// SELECT DISTINCT
+//     categorys.idCat,
+//     categorys.nameCat
+// FROM
+//     categorys
+// INNER JOIN
+//     products ON categorys.idCat = products.idCategory
+// INNER JOIN
+//     kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+// INNER JOIN
+// 	parentcategorys ON parentcategorys.idcatParent = categorys.catParent
+//     WHERE categorys.nameCat LIKE '%%' AND parentcategorys.idcatParent LIKE '%CP3%' AND kindofrooms.nameRoom LIKE '%%'

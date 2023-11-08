@@ -2,6 +2,17 @@ import { QueryTypes } from 'sequelize';
 import db, { sequelize } from '../models/index';
 import public_method from '../public/public_method';
 
+const dateformat = () => {
+    const date = new Date();
+    const addLeadingZero = (number) => (number < 10 ? '0' : '') + number;
+
+    // Định dạng ngày giờ theo định dạng "YYYY-MM-DD HH:MI:SS"
+    const formattedDateTime = `${date.getFullYear()}-${addLeadingZero(date.getMonth() + 1)}-${addLeadingZero(date.getDate())} ${addLeadingZero(date.getHours())}:${addLeadingZero(date.getMinutes())}:${addLeadingZero(date.getSeconds())}`;
+    
+    console.log("Ngày giờ định dạng SQL:", formattedDateTime);
+    return formattedDateTime;
+}
+
 let getDiscountByPage = (page, limit, search) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
@@ -262,6 +273,39 @@ let updateQuantityDiscount = (idDiscount) => {
     })
 }
 
+let checkDiscountValid = (idProduct) => {
+    return new Promise(async (resolve, reject) =>{
+        try {
+            let data = {};
+            const date = dateformat();
+            const query = `SELECT
+            CASE
+                WHEN
+                    '${date}' BETWEEN discounts.dayStart AND discounts.dayEnd
+                THEN
+                    discounts.value
+                ELSE
+                    NULL
+            END AS value
+            FROM discounts WHERE idProduct = '${idProduct}'`;
+            const result = await sequelize.query(query, {
+                type: sequelize.QueryTypes.SELECT,
+            });
+            if (result.length !== 0) {
+                data.errCode = 0;
+                data.errMessage = 'Sản phẩm đang giảm giá.'
+                data.discounts = result
+            } else {
+                data.errCode = 1;
+                data.errMessage = 'Sản phẩm đã qua thời gian giảm giá.'
+            }
+            resolve(data);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 let checkQuantity = (idDiscount) => {
     return new Promise(async (resolve, reject) =>{
         try {
@@ -301,4 +345,5 @@ module.exports = {
 
     updateQuantityDiscount: updateQuantityDiscount,
     checkQuantity: checkQuantity,
+    checkDiscountValid: checkDiscountValid,
 }

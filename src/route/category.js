@@ -13,6 +13,7 @@ router.get('/KindOfRoom/all', categoryController.getListKindOfRoom);
 router.get('/KindOfRoom/', categoryController.getKindOfRoomByPage);
 router.get('/KindOfRoom/:id', categoryController.getOneKindOfRoom);
 
+router.get('/list', categoryController.getlistCategoryformobile);
 router.get('/all', categoryController.getlistCategory);
 router.get('/', categoryController.getCategoryByPage);
 router.get('/:id', categoryController.getOneCategory);
