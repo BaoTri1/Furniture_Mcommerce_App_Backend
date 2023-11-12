@@ -152,7 +152,7 @@ let updateOrder = (idOrder, data) => {
 
 let deleteOrder = (idOrder) => { }
 
-let getOrderByPage = (page, limit, status, dayCreate, dayUpdate, search, price) => {
+let getOrderByPage = (page, limit, status, dayCreate, dayUpdate, search, price, payStatus) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
         let total_row;
@@ -172,6 +172,7 @@ let getOrderByPage = (page, limit, status, dayCreate, dayUpdate, search, price) 
                 AND orders.dayCreateAt LIKE '%${dayCreate}%'
                 AND orders.dayUpdateAt LIKE '%${dayUpdate}%'
                 AND (orders.idOrder LIKE '%${search}%' OR nameCustomer LIKE '%${search}%' OR sdtOrder LIKE '%${search}%')
+                AND orders.payStatus LIKE '%${payStatus}%'
                 AND (orders.total > ${!+price_start ? 0 : +price_start} 
                     AND orders.total <= ${!+price_end ? 1000000000 : +price_end})
                     ORDER BY orders.createdAt`
@@ -275,7 +276,51 @@ let getDetailOrder = (idOrder) => {
     });
 }
 
-let getListOrder = () => {}
+let getListOrderProcess = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = {};
+            let total_row;
+            const query = `SELECT
+            orders.idOrder,
+            orders.dayCreateAt,
+            orders.total,
+            status.name
+              FROM
+                  orders
+              INNER JOIN
+                  status ON orders.status = status.idStatus
+              LEFT JOIN
+                  detailorder ON orders.idOrder = detailorder.idOrder
+              WHERE
+                  status.name = 'Đang chờ xử lý'
+              GROUP BY
+                  orders.idOrder, orders.dayCreateAt, orders.total, status.name
+              ORDER BY
+                  orders.dayCreateAt DESC`;
+
+            const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
+            if (rowData.length !== 0) {
+                total_row = rowData.length;
+            }
+
+            const orders = await sequelize.query(`${query} LIMIT 0, 5;`, { type: QueryTypes.SELECT });
+            if(orders.length !== 0){
+                data.errCode = 0
+                data.errMessage = 'Lấy danh sách đơn hàng thành công'
+                data.badge = total_row
+                data.orders = orders
+
+            }else{
+                data.errCode = 1
+                data.errMessage = 'Không có đơn hàng chưa xử lí nào.'
+            }
+            resolve(data)
+        } catch (error) {
+            reject(error);
+        }
+    });        
+}
 
 let getListOrderDeliveresForUser = (idUser, page, limit) => {
     return new Promise(async (resolve, reject) => {
@@ -425,7 +470,7 @@ module.exports = {
     getInforOrder: getInforOrder,
     getDetailOrder: getDetailOrder,
     getOrderByPage: getOrderByPage,
-    getListOrder: getListOrder,
+    getListOrderProcess: getListOrderProcess,
     getListOrderDeliveresForUser: getListOrderDeliveresForUser,
     getListOrderProcessingForUser: getListOrderProcessingForUser,
     getListOrderCancleForUser: getListOrderCancleForUser,

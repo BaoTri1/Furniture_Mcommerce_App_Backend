@@ -70,7 +70,7 @@ class OrderService {
     }
 
     //GET api/orders/?page=''&limit=''
-    async getOrdertByPage(req, res, next) {
+    async getOrderByPage(req, res, next) {
         let page = req.query.page || 1;
         let limit = req.query.limit || 20;
         let status = req.query.status || '';
@@ -78,8 +78,9 @@ class OrderService {
         let dayUpdate = req.query.dayUpdate || '';
         let search = req.query.search || '';
         let price = req.query.price || '';
+        let payStatus = req.query.payStatus || '';
 
-        let results = await orderService.getOrderByPage(page, limit, status, dayCreate, dayUpdate, search, price)
+        let results = await orderService.getOrderByPage(page, limit, status, dayCreate, dayUpdate, search, price, payStatus)
 
         return res.status(200).json({
            ...results   
@@ -90,6 +91,16 @@ class OrderService {
     async getListStatus(req, res, next) {
 
         let results = await orderService.getListStatus()
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/orders/list-order-process
+    async getListOrderProcess(req, res, next) {
+
+        let results = await orderService.getListOrderProcess()
 
         return res.status(200).json({
            ...results   

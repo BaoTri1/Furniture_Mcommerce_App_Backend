@@ -11,7 +11,8 @@ router.get('/items', orderController.getInforOrder);
 
 router.use(isAdmin);
 router.get('/list-status', orderController.getListStatus);
-router.get('/', orderController.getOrdertByPage);
+router.get('/list-order-process', orderController.getListOrderProcess);
+router.get('/', orderController.getOrderByPage);
 router.put('/update/:id', orderController.updateOrder);
 
 
