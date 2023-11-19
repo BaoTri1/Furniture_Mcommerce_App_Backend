@@ -128,6 +128,127 @@ class OrderService {
             ...results
         })
     }
+
+    //GET api/orders/list-order-process-for-user/?idUser=''
+    async getListOrderProcessForUser(req, res, next) {
+        let idUser = req.query.idUser;
+
+        let results = await orderService.getListOrderProcessingForUser(idUser);
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/orders/list-order-readydelivery-for-user/?idUser=''
+    async getListOrderReadyDeliveryForUser(req, res, next) {
+        let idUser = req.query.idUser;
+
+        let results = await orderService.getListOrderReadyDeliveryForUser(idUser);
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/orders/list-order-delivering-for-user/?idUser=''
+    async getListOrderDeliveringForUser(req, res, next) {
+        let idUser = req.query.idUser;
+
+        let results = await orderService.getListOrderDeliveringForUser(idUser);
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/orders/list-order-delivered-for-user/?idUser=''
+    async getListOrderDelivereredForUser(req, res, next) {
+        let idUser = req.query.idUser;
+
+        let results = await orderService.getListOrderDelivereredForUser(idUser);
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/orders/list-order-cancel-for-user/?idUser=''
+    async getListOrderCancleForUser(req, res, next) {
+        let idUser = req.query.idUser;
+
+        let results = await orderService.getListOrderCancleForUser(idUser);
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //GET api/orders/count-order-for-user/?idUser=''
+    async getCountOrderForUser(req, res, next) {
+        let idUser = req.query.idUser;
+
+        let results = await orderService.getCountOrderForUser(idUser);
+
+        return res.status(200).json({
+           ...results   
+        })
+    }
+
+    //PUT api/orders/cancleOrder/?idOrder=''
+    async cancleOrder(req, res, next) {
+        let idOrder = req.query.idOrder;
+        let status = req.body.status;
+        let products = req.body.products;
+
+        console.log(idOrder);
+        console.log(status);
+        console.log(products);
+
+        //idDelivery	idUser	idPayment	nameCustomer	sdtOrder	address	status	total	payStatus
+
+        if (!idOrder || !status || !products) {
+            return res.status(400).json({
+                errCode: -1,
+                errMessage: 'Internal Server Error or missing payload.'
+            })
+        }
+
+        console.log('xuong day roi')
+        let results = await orderService.cancelOrder(idOrder, req.body)
+
+        return res.status(200).json({
+            ...results
+        })
+
+    }
+
+    //PUT api/orders/updateStatus/?idOrder=''
+    async updateStatusOrder(req, res, next) {
+        let idOrder = req.query.idOrder;
+        let idStatus = req.body.idStatus;
+        let payStatus = req.body.payStatus;
+
+        console.log(idOrder);
+        console.log(idStatus);
+
+        //idDelivery	idUser	idPayment	nameCustomer	sdtOrder	address	status	total	payStatus
+
+        if (!idOrder || !idStatus || !payStatus) {
+            return res.status(400).json({
+                errCode: -1,
+                errMessage: 'Internal Server Error or missing payload.'
+            })
+        }
+
+        console.log('xuong day roi')
+        let results = await orderService.updateStatusOrder(idOrder, req.body)
+
+        return res.status(200).json({
+            ...results
+        })
+
+    }
 }
 
 module.exports = new OrderService;

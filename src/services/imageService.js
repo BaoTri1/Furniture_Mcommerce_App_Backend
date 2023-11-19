@@ -48,6 +48,67 @@ let uploadImageProduct = (params, file) => {
     });
 }
 
+let uploadAvatar = (idUser, file) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let dataImage = {};
+            console.log(file)
+
+            //Insert database
+            try {
+                const queryAvatar = `SELECT avatar FROM users WHERE idUser = '${idUser}'`;
+
+                // const values = {
+                //     idProduct: params.idProduct,
+                //     nameImage: file.filename,
+                //     typeImg: params.typeImg,
+                //     imgUrl: file.path,
+                //     createdAt: new Date(),
+                //     updatedAt: new Date(),
+                // };
+
+                const resultAvatar = await sequelize.query(queryAvatar, {
+                    type: sequelize.QueryTypes.SELECT,
+                });
+                console.log(resultAvatar);
+                if (resultAvatar.length === 0) {
+                    dataImage.errCode = 1;
+                    dataImage.errMessage = 'Thêm hình ảnh thất bại.'
+                } else {
+                    console.log(resultAvatar[0]);
+                    if(resultAvatar[0].avatar !== null){
+                        const [path, name] = resultAvatar[0].avatar.split(' ');
+                        cloudinary.uploader.destroy(name)
+                    }
+
+                    const query = `UPDATE users SET avatar = :avatar, updatedAt = :updatedAt WHERE idUser = '${idUser}'`;
+                    const values = {
+                        avatar: `${file.path} ${file.filename}`,
+                        updatedAt: new Date(),
+                    };
+
+                    const result = await sequelize.query(query, {
+                        replacements: values,
+                        type: sequelize.QueryTypes.UPDATE,
+                    });
+                    if (result[1] === 0) {
+                        dataImage.errCode = 1;
+                        dataImage.errMessage = 'Cập nhật avatar thất bại.'
+                    } else {
+                        dataImage.errCode = 0;
+                        dataImage.errMessage = 'Cập nhật avatar thành công.'
+                    }
+                }
+            } catch (error) {
+                console.log(error);
+            }
+            resolve(dataImage)
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
 let uploadDetailImageProduct = (params, files) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -221,6 +282,7 @@ module.exports = {
 
     deleteImages: deleteImages,
     getListImagesDetail: getListImagesDetail,
+    uploadAvatar: uploadAvatar
 }
 
 /*

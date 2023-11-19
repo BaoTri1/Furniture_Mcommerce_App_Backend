@@ -54,6 +54,19 @@ class ImageController {
             results
         })
     }
+
+    //[POST] /api/images/uploaddetailproduct
+    async uploadAvatar(req, res, next) {
+        let id = req.query.id;
+        if (!req.file) {
+            next(new Error('No file uploaded!'));
+            return;
+        }
+        let results = await imageService.uploadAvatar(id, req.file);
+        return res.status(200).json({
+            ...results
+        })
+    }
 }
 
 module.exports = new ImageController;

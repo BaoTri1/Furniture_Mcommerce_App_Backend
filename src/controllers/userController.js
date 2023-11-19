@@ -48,7 +48,7 @@ class UserController {
 
     //[GET] /api/users/
     async getInfoUser(req, res, next) {
-
+        console.log(req.account)
         let { idAcc } = req.account;
 
         let userData = await userService.getInforUser(idAcc);
@@ -78,6 +78,38 @@ class UserController {
         try {
             return res.status(200).json({
                 results
+            })
+        } catch (error) {
+            return res.status(500).json({
+                errCode: -1,
+                errMessage: 'Internal Server Error'
+            })
+        }
+    }
+
+    //[PUT] /api/users/updateInfo/?id=''
+    async updateInfoUser(req, res, next) {
+        let id = req.query.id;
+        let fullName = req.body.fullName;
+        let sdtUser = req.body.sdtUser;
+        let email = req.body.email;
+        let gender = req.body.gender;
+        let dateOfBirth = req.body.dateOfBirth;
+
+        if(!fullName || !sdtUser || !email || !gender || !dateOfBirth){
+            return res.status(400).json({
+                errCode: -1,
+                errMessage: 'Internal Server Error or missing payload.'
+            })
+        }
+
+        let userData = await userService.updateInfor(req.body, id);
+
+        try {
+            return res.status(200).json({
+                errCode: 0,
+                errMessage: 'Ok',
+                userData
             })
         } catch (error) {
             return res.status(500).json({

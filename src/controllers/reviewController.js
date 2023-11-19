@@ -8,16 +8,15 @@ class ReviewController {
         let idProduct = req.body.idProduct;
         let point = req.body.point;
         let comment = req.body.comment;
-        let timeCreate = req.body.timeCreate;
 
-        if(!idUser || !idProduct || !point || !comment || !timeCreate) {
+        if(!idUser || !idProduct || !point || !comment) {
             return res.status(400).json({
                 errCode: -1,
                 errMessage: 'Internal Server Error or missing payload.'
             })
         }
 
-        if(point < 0) {
+        if(point < 0 || point > 5) {
             return res.status(400).json({
                 errCode: -1,
                 errMessage: 'Điểm đánh giá không hợp lệ.'
@@ -27,7 +26,7 @@ class ReviewController {
         let results = await reviewService.createReview(req.body)
 
         return res.status(200).json({
-            results
+            ...results
             
         })
 
@@ -59,9 +58,9 @@ class ReviewController {
             })
         }
 
-        let results = await reviewService.getListReviewForProduct(idProduct)
+        let results = await reviewService.getListReviewForProduct(idProduct, page, limit)
         return res.status(200).json({
-            results,    
+            ...results,    
          })
     }
 
@@ -78,7 +77,7 @@ class ReviewController {
 
         let results = await reviewService.Rating(idProduct)
         return res.status(200).json({
-            results,    
+            ...results    
          })
     }
 

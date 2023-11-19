@@ -8,9 +8,12 @@ const userController = require('../controllers/userController');
 
 router.post('/login', userController.handleLogin);
 router.post('/signup', userController.handleSignup);
-router.get('/info', userController.getInfoUser);
+
 
 router.use(verifyToken);
+router.get('/info', userController.getInfoUser);
+router.put('/updateInfo', userController.updateInfoUser);
+
 router.use(isAdmin);
 
 router.get('/', userController.getListUserByPage);

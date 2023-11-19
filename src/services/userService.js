@@ -176,6 +176,10 @@ let getInforUser = (idAcc) => {
             if (user.length !== 0) {
                 console.log(user[0]);
                 console.log(user.length);
+                const [path, name] = user[0].avatar.split(' ');
+                user[0].avatar = path;
+                if(user[0].gender !== null)
+                    user[0].gender = user[0].gender == 1 ? 'Nam' : 'Nữ';
                 resolve(user[0]);
             } else {
                 console.log('khong co', user[0]);
@@ -238,6 +242,41 @@ let getListUserByPage = (page, limit, search) => {
     });
 }
 
+let updateInfor= (data, idUser) => {
+    return new Promise(async (resolve, reject) => {
+        let dataUser = {};
+        try {
+            const query = `UPDATE users SET fullName = :fullName,  sdtUser = :sdtUser,
+             email = :email, gender = :gender, dateOfBirth = :dateOfBirth, updatedAt = :updatedAt
+                WHERE idUser = '${idUser}'`;
+
+             const values = {
+                fullName: data.fullName,
+                sdtUser: data.sdtUser,
+                email: data.email,
+                gender: data.gender === 'Nam' ? true : false,
+                dateOfBirth: new Date(data.dateOfBirth),
+                updatedAt: new Date(),
+            };
+            const result = await sequelize.query(query, {
+                replacements: values,
+                type: sequelize.QueryTypes.UPDATE,
+            });
+            if (result[1] === 0) {
+                dataUser.errCode = 1;
+                dataUser.errMessage = 'Cập nhật thông tin thất bại.'
+            } else {
+                dataUser.errCode = 0;
+                dataUser.errMessage = 'Cập nhật thông tin thành công.'
+            }
+            resolve(dataUser);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+
 /*
 SELECT idUser, fullName, sdtUser, email, gender, dateOfBirth, accounts.sdt, accounts.createdAt
 FROM `users` INNER JOIN `accounts` ON users.idAcc = accounts.idAcc
@@ -249,4 +288,6 @@ module.exports = {
     handleUserSignup: handleUserSignup,
     getInforUser: getInforUser,
     getListUserByPage: getListUserByPage,
+
+    updateInfor: updateInfor,
 }

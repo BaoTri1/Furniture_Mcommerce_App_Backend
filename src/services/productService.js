@@ -572,7 +572,7 @@ let checkQuantity = (idProduct, checkQuantity) => {
     })
 }
 
-let updateQuantityProduct = (idProduct, num) => {
+let updateQuantityProduct = (idProduct, num, calculation) => {
     return new Promise(async (resolve, reject) => {
         try {
             let data = {};
@@ -584,7 +584,13 @@ let updateQuantityProduct = (idProduct, num) => {
                 let quantity = resultQuatity[0].quantity;
                 let newQuatity;
                 if (quantity > 0) {
-                    newQuatity = +quantity - num;
+                    if(calculation === '-'){
+                        newQuatity = +quantity - num;
+                    }
+                    else if(calculation === '+'){
+                        newQuatity = +quantity + num;
+                    }
+                    
                     try {
                         const query = `UPDATE products SET quantity = :quantity, updatedAt = :updatedAt 
                                         WHERE idProduct = '${idProduct}';`;

@@ -8,6 +8,8 @@ import isAdmin from '../middlewares/verify_role';
 const router = express.Router();
 
 router.use(verifyToken);
+router.put('/uploadavatar',fileUploader.single('image'), imageController.uploadAvatar)
+
 router.use(isAdmin);
 
 router.post('/uploadavatarproduct',fileUploader.single('image'),imageController.uploadAvatarProduct)
