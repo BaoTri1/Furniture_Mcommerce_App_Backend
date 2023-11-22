@@ -35,7 +35,7 @@ class ProductController {
 
     }
 
-    //GET api/products/?page=''&limit=''&category=''&price=''&typroom=''&search=''&catparent='
+    //GET api/products/?page=''&limit=''&category=''&price=''&typroom=''&search=''&catparent=''&rating='''
     async getProductByPage(req, res, next) {
         let page = req.query.page || 1;
         let limit = req.query.limit || 20;
@@ -44,8 +44,9 @@ class ProductController {
         let typeroom = req.query.typeroom || '';
         let search = req.query.search || '';
         let catParent = req.query.catparent || '';
+        let rating = req.query.rating || 0.0;
 
-        let results = await productService.getProductByPage(page, limit, category, price, typeroom, search, catParent)
+        let results = await productService.getProductByPage(page, limit, category, price, typeroom, search, catParent, rating)
 
         return res.status(200).json({
            ...results   

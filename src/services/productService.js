@@ -139,7 +139,7 @@ let updateProduct = (idProduct, data) => {
     });
 }
 
-let getProductByPage = (page, limit, category, price, typeroom, search, idCatPar) => {
+let getProductByPage = (page, limit, category, price, typeroom, search, idCatPar, rating) => {
     return new Promise(async (resolve, reject) => {
         let data = {};
         let total_row;
@@ -169,6 +169,7 @@ let getProductByPage = (page, limit, category, price, typeroom, search, idCatPar
             
             const query = `SELECT
             products.idProduct,
+            IFNULL(ROUND(AVG(ratings.point), 1), 0) AS AVGPoint,
             images.imgUrl,
             CASE
                 WHEN
@@ -220,6 +221,8 @@ let getProductByPage = (page, limit, category, price, typeroom, search, idCatPar
             categorys ON products.idCategory = categorys.idCat
         LEFT JOIN
             kindofrooms ON products.idTypesRoom = kindofrooms.idRoom
+        LEFT JOIN
+    		ratings ON products.idProduct = ratings.idProduct
         LEFT JOIN 
             parentcategorys ON parentcategorys.idcatParent = categorys.catParent
         WHERE
@@ -230,7 +233,12 @@ let getProductByPage = (page, limit, category, price, typeroom, search, idCatPar
             AND (kindofrooms.nameRoom LIKE '%${typeroom}%' ${queryTypeRoom})
             AND (products.price > ${!+price_start ? 0 : +price_start} 
                         AND products.price <= ${!+price_end ? 1000000000 : +price_end})
-                 ORDER BY products.createdAt`
+            GROUP BY
+                products.nameProduct
+            HAVING
+                AVGPoint >= ${rating}
+             ORDER BY 
+                products.createdAt`
 
             const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
             if (rowData.length !== 0) {
