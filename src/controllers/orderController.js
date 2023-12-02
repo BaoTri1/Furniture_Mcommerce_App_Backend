@@ -234,7 +234,7 @@ class OrderService {
 
         //idDelivery	idUser	idPayment	nameCustomer	sdtOrder	address	status	total	payStatus
 
-        if (!idOrder || !idStatus || !payStatus) {
+        if (!idOrder || !idStatus) {
             return res.status(400).json({
                 errCode: -1,
                 errMessage: 'Internal Server Error or missing payload.'

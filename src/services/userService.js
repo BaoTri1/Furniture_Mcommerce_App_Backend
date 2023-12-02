@@ -21,6 +21,7 @@ let handleUserLogin = (sdt, passwd) => {
                     let check = await bcrypt.compareSync(passwd, account[0].password);
                     if (check) {
                         let user = await getInforUser(account[0].idAcc);
+                        console.log("userinfor",user)
                         const token = JWT.sign({ idAcc: account[0].idAcc, isAdmin: account[0].isAdmin }, process.env.JWT_SECRET, { expiresIn: '1d' });
                         userData.errCode = 0
                         userData.errMessage = 'Đăng nhập thành công.'
@@ -176,8 +177,10 @@ let getInforUser = (idAcc) => {
             if (user.length !== 0) {
                 console.log(user[0]);
                 console.log(user.length);
-                const [path, name] = user[0].avatar.split(' ');
-                user[0].avatar = path;
+                if(user[0].avatar !== null){
+                    const [path, name] = user[0].avatar.split(' ');
+                    user[0].avatar = path;
+                }
                 if(user[0].gender !== null)
                     user[0].gender = user[0].gender == 1 ? 'Nam' : 'Nữ';
                 resolve(user[0]);

@@ -410,6 +410,7 @@ let getInfoProduct = (idProduct) => {
 
             const query = `SELECT
             products.idProduct,
+            categorys.idCat,
             images.imgUrl,
             CASE
                 WHEN
@@ -445,6 +446,7 @@ let getInfoProduct = (idProduct) => {
             END AS dayEnd,
             categorys.nameCat,
             kindofrooms.nameRoom,
+            kindofrooms.idRoom,
             nameProduct,
             price,
             quantity,

@@ -227,14 +227,14 @@ let getOrderByPage = (page, limit, status, dayCreate, dayUpdate, search, price, 
                 AND orders.payStatus LIKE '%${payStatus}%'
                 AND (orders.total > ${!+price_start ? 0 : +price_start} 
                     AND orders.total <= ${!+price_end ? 1000000000 : +price_end})
-                    ORDER BY orders.createdAt`
+                    ORDER BY orders.dayCreateAt`
 
             const rowData = await sequelize.query(query, { type: QueryTypes.SELECT });
             if (rowData.length !== 0) {
                 total_row = rowData.length;
             }
             total_page = Math.ceil(total_row / limit);
-            const orders = await sequelize.query(`${query} ASC LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
+            const orders = await sequelize.query(`${query} DESC LIMIT ${start}, ${limit};`, { type: QueryTypes.SELECT });
             if (orders.length !== 0) {
                 console.log(orders);
                 console.log(orders.length);

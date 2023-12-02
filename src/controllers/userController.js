@@ -7,6 +7,8 @@ class UserController {
         try {
             let sdt = req.body.sdt;
             let passwd = req.body.passwd;
+            console.log(sdt)
+            console.log(passwd)
             if (!sdt || !passwd) {
                 return res.status(400).json({
                     errCode: -1,
@@ -20,6 +22,7 @@ class UserController {
                 ...userData
             })
         } catch (error) {
+            console.log("aaa")
             return res.status(500).json({
                 errCode: -1,
                 errMessage: 'Internal Server Error'
